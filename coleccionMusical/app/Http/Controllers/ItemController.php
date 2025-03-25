@@ -12,13 +12,10 @@ use App\Models\DTO\ItemDTO;
 
 class ItemController extends Controller
 {
-    //
-    
-    private $itemDAO;
 
-    public function __construct() {
-        // $this->itemDAO = new ItemDAO();
-    }
+    public function __construct() {}
+
+
 
     public function index() {
 
@@ -85,6 +82,7 @@ class ItemController extends Controller
             $itemsDTO[] = $itemDTO;
         }
 
+        // Ya no necesitamos la utilidad ApiJsonResponse, Laravel tiene incorporada esta función
         if(isset($itemsDTO)) {
             return response()->json([
                 'status' => 'OK',
@@ -103,46 +101,70 @@ class ItemController extends Controller
 
     }
 
-    // // Busca un item por ID, recaba sus entidades, las mapea a un DTO y lo devuelve en la respuesta
-    // public function getById($id) {
+    // Busca un item por ID, recaba sus entidades, las mapea a un DTO y lo devuelve en la respuesta
+    public function getById($id) {
 
-    //     $itemEntidad = $this->itemDAO->getItemById($id);
-    //     $externalIdsEntidades = $this->itemDAO->getExternalIdsByItemId($id);
+        // echo "ID: " . $id;
 
-    //     $arrayExternalIds = [];
+        // Obtiene la fila correspondiente al ítem buscado por ID
+        $itemFila = DB::table('items')->where('id', $id)->get();
+        
+        // Si encuentra resultados, continúa el resto del proceso. Si no, devuelve un JSON con el error.
+        if (count($itemFila)) {
+            // Modela la fila a una entidad Item
+            $itemEntity = new ItemEntity(
+                $itemFila[0]->id, $itemFila[0]->title, $itemFila[0]->artist,
+                $itemFila[0]->format, $itemFila[0]->year, $itemFila[0]->origyear,
+                $itemFila[0]->label, $itemFila[0]->rating, $itemFila[0]->comment,
+                $itemFila[0]->buyprice, $itemFila[0]->condition, $itemFila[0]->sellprice
+            );
 
-    //     foreach($externalIdsEntidades as $unExternalId) {
-    //         $arrayExternalIds[$unExternalId->getSupplier()] = $unExternalId->getValue();
-    //     }
+            // Obtiene una colección de filas con los externalIds correspondientes al ID del ítem
+            $externalIdsCollection = DB::table('externalids')->where('itemid', $id)->get();
 
-    //     // Si se encuentra el ítem, mapea todo a un DTO y lo envía como respuesta
-    //     if($itemEntidad) {
+            $externalIdArray = [];
 
-    //         // Mapea todo al un DTO para devolverlo al cliente
-    //         $itemDTO = new ItemDTO(
-    //             $itemEntidad->getId(),
-    //             $itemEntidad->getTitle(),
-    //             $itemEntidad->getArtist(),
-    //             $itemEntidad->getFormat(),
-    //             $itemEntidad->getYear(),
-    //             $itemEntidad->getOrigYear(),
-    //             $itemEntidad->getLabel(),
-    //             $itemEntidad->getRating(),
-    //             $itemEntidad->getComment(),
-    //             $itemEntidad->getBuyprice(),
-    //             $itemEntidad->getCondition(),
-    //             $itemEntidad->getSellPrice(),
-    //             $arrayExternalIds
-    //         );
+            // Se modelan a entidades y se guardan en un array los datos que interesan para el DTO
+            foreach($externalIdsCollection as $externalIdsFila) {
+                $externalIdEntity = new ExternalIdEntity(
+                    $externalIdsFila->id, $externalIdsFila->supplier,
+                    $externalIdsFila->value, $externalIdsFila->itemid
+                );
 
-    //         $response = new ApiResponse('OK', 200, 'Ítem con ID ' . $id, $itemDTO);
-    //         return $this->sendJsonResponse($response);
-    //     } else {
-    //         // Si llega hasta aquí, no lo ha encontrado
-    //         $response = new ApiResponse('ERROR', 404, 'No existe un ítem con ID ' . $id, null);
-    //         return $this->sendJsonResponse($response);
-    //     }
-    // }
+                $externalIdArray[$externalIdEntity->getSupplier()] = $externalIdEntity->getValue();
+            }
+
+            $itemDTO = new ItemDTO(
+                $itemEntity->getTitle(),
+                $itemEntity->getArtist(),
+                $itemEntity->getFormat(),
+                $itemEntity->getYear(),
+                $itemEntity->getOrigYear(),
+                $itemEntity->getLabel(),
+                $itemEntity->getRating(),
+                $itemEntity->getComment(),
+                $itemEntity->getBuyprice(),
+                $itemEntity->getCondition(),
+                $itemEntity->getSellPrice(),
+                $externalIdArray
+            );
+
+            // Envía la respuesta
+            return response()->json([
+                'status' => 'OK',
+                'code' => 200,
+                'description' => 'Ítem con ID ' . $id,
+                'data' => $itemDTO
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'ERROR',
+                'code' => 404,
+                'description' => 'No existe un ítem con ID ' . $id,
+                'data' => null
+            ]);
+        }
+    }
 
 
     // public function getByArtist($artist) {
