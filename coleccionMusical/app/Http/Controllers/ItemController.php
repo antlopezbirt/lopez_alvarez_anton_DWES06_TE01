@@ -10,6 +10,8 @@ use App\Models\entity\ItemEntity;
 use App\Models\entity\ExternalIdEntity;
 use App\Models\DTO\ItemDTO;
 
+use TypeError;
+
 class ItemController extends Controller
 {
 
@@ -17,16 +19,16 @@ class ItemController extends Controller
 
 
 
-    public function index() {
+    // public function index() {
 
-        // Ya no necesitamos la utilidad ApiJsonResponse, Laravel tiene incorporada esta función
-        return response()->json([
-            'status' => 'OK',
-            'code' =>  200,
-            'description' => 'Hola, has llegado al indice de esta API, usa sus endpoints para obtener o modificar datos',
-            'data' => null
-        ]);
-    }
+    //     // Ya no necesitamos la utilidad ApiJsonResponse, Laravel tiene incorporada esta función
+    //     return response()->json([
+    //         'status' => 'OK',
+    //         'code' =>  200,
+    //         'description' => 'Hola, has llegado al indice de esta API, usa sus endpoints para obtener o modificar datos',
+    //         'data' => null
+    //     ]);
+    // }
 
     public function getAll() {
 
@@ -36,48 +38,8 @@ class ItemController extends Controller
 
         foreach($itemsCollection as $itemFila) {
 
-            // Modela la entidad Item
-            $itemEntity = new ItemEntity(
-                $itemFila->id, $itemFila->title, $itemFila->artist,
-                $itemFila->format, $itemFila->year, $itemFila->origyear,
-                $itemFila->label, $itemFila->rating, $itemFila->comment,
-                $itemFila->buyprice, $itemFila->condition, $itemFila->sellprice
-            );
-
-            // var_dump($itemEntity);
-
-            $externalIdArray = [];
-
-            // Consulta las entidades ExternalId correspondientes al este Item
-            $externalIdsCollection = DB::table('externalids')->where('itemid', $itemEntity->getId())->get();
-
-
-            foreach($externalIdsCollection as $externalIdsFila) {
-                // Se crea la entidad correspondiente a cada fila
-                $externalIdEntity = new ExternalIdEntity(
-                    $externalIdsFila->id, $externalIdsFila->supplier,
-                    $externalIdsFila->value, $externalIdsFila->itemid
-                );
-
-                // Los valores que interesan se acumulan en un array
-                $externalIdArray[$externalIdEntity->getSupplier()] = $externalIdEntity->getValue();
-            }
-
-            // Finalmente se mapean los valores a DTOs y se acumulan en un array
-            $itemDTO = new ItemDTO(
-                $itemEntity->getTitle(),
-                $itemEntity->getArtist(),
-                $itemEntity->getFormat(),
-                $itemEntity->getYear(),
-                $itemEntity->getOrigYear(),
-                $itemEntity->getLabel(),
-                $itemEntity->getRating(),
-                $itemEntity->getComment(),
-                $itemEntity->getBuyprice(),
-                $itemEntity->getCondition(),
-                $itemEntity->getSellPrice(),
-                $externalIdArray
-            );
+            // Obtiene un itemDTO a partir del ID del objeto devuelto por el ORM
+            $itemDTO = $this->getItemDTOById($itemFila->id);
 
             $itemsDTO[] = $itemDTO;
         }
@@ -104,50 +66,11 @@ class ItemController extends Controller
     // Busca un item por ID, recaba sus entidades, las mapea a un DTO y lo devuelve en la respuesta
     public function getById($id) {
 
-        // echo "ID: " . $id;
+        // Obtiene un DTO a partir de su ID, o false
+        $itemDTO = $this->getItemDTOById($id);
 
-        // Obtiene la fila correspondiente al ítem buscado por ID
-        $itemFila = DB::table('items')->where('id', $id)->get();
-        
-        // Si encuentra resultados, continúa el resto del proceso. Si no, devuelve un JSON con el error.
-        if (count($itemFila)) {
-            // Modela la fila a una entidad Item
-            $itemEntity = new ItemEntity(
-                $itemFila[0]->id, $itemFila[0]->title, $itemFila[0]->artist,
-                $itemFila[0]->format, $itemFila[0]->year, $itemFila[0]->origyear,
-                $itemFila[0]->label, $itemFila[0]->rating, $itemFila[0]->comment,
-                $itemFila[0]->buyprice, $itemFila[0]->condition, $itemFila[0]->sellprice
-            );
-
-            // Obtiene una colección de filas con los externalIds correspondientes al ID del ítem
-            $externalIdsCollection = DB::table('externalids')->where('itemid', $id)->get();
-
-            $externalIdArray = [];
-
-            // Se modelan a entidades y se guardan en un array los datos que interesan para el DTO
-            foreach($externalIdsCollection as $externalIdsFila) {
-                $externalIdEntity = new ExternalIdEntity(
-                    $externalIdsFila->id, $externalIdsFila->supplier,
-                    $externalIdsFila->value, $externalIdsFila->itemid
-                );
-
-                $externalIdArray[$externalIdEntity->getSupplier()] = $externalIdEntity->getValue();
-            }
-
-            $itemDTO = new ItemDTO(
-                $itemEntity->getTitle(),
-                $itemEntity->getArtist(),
-                $itemEntity->getFormat(),
-                $itemEntity->getYear(),
-                $itemEntity->getOrigYear(),
-                $itemEntity->getLabel(),
-                $itemEntity->getRating(),
-                $itemEntity->getComment(),
-                $itemEntity->getBuyprice(),
-                $itemEntity->getCondition(),
-                $itemEntity->getSellPrice(),
-                $externalIdArray
-            );
+        // Devuelve el DTO o un 404
+        if ($itemDTO) {
 
             // Envía la respuesta
             return response()->json([
@@ -236,71 +159,87 @@ class ItemController extends Controller
     // }
 
 
-    // // Guarda un nuevo item en la BD y en caso de exito lo devuelve con 201
-    // public function create($datosJson) {
+    // Guarda un nuevo item en la BD y en caso de exito lo devuelve con un 201
+    public function create(Request $request) {
 
-    //     // Intenta modelar los datos a un ItemDTO para ver si están bien formados
-    //     try {
-    //         @$itemDTOModelado = new ItemDTO(
-    //             0, $datosJson['title'], $datosJson['artist'],
-    //             $datosJson['format'], $datosJson['year'], $datosJson['origYear'],
-    //             $datosJson['label'], $datosJson['rating'], $datosJson['comment'],
-    //             $datosJson['buyPrice'], $datosJson['condition'], $datosJson['sellPrice'],
-    //             $datosJson['externalIds']
-    //         );
-    //     } catch(TypeError) {
-    //         $response = new ApiResponse('ERROR', 400, 'Los datos recibidos están mal formados', $datosJson);
-    //         return $this->sendJsonResponse($response);
-    //     }
+        $payload = json_decode($request->getContent(), true);
+        
+        // var_dump($payload);
+
+        // Intenta modelar los datos a un ItemDTO para ver si están bien formados
+        try {
+            @$itemDTOModelado = new ItemDTO(
+                $payload['title'], $payload['artist'], $payload['format'],
+                $payload['year'], $payload['origYear'], $payload['label'],
+                $payload['rating'], $payload['comment'], $payload['buyPrice'],
+                $payload['condition'], $payload['sellPrice'], $payload['externalIds']
+            );
+        } catch(TypeError) {
+
+            return response()->json([
+                'status' => 'ERROR',
+                'code' => 400,
+                'description' => 'Los datos recibidos están mal formados',
+                'data' => $request->getContent()
+            ]);
+        }
 
 
-    //     // Comprueba que los campos que no son string tengan buen formato
-    //     if ($this->chequearValores($datosJson) !== true) {
+        // Comprueba que los campos que no son string tengan buen formato
+        if ($this->chequearValores($payload) !== true) {
                 
-    //         $textoRespuesta = $this->chequearValores($datosJson);
+            $textoRespuesta = $this->chequearValores($payload);
 
-    //         $response = new ApiResponse('ERROR', 400, $textoRespuesta, $datosJson);
-    //         return $this->sendJsonResponse($response);
-    //     }
+            return response()->json([
+                'status' => 'ERROR',
+                'code' => 400,
+                'description' => $textoRespuesta,
+                'data' => $payload
+            ]);
+        }
 
-    //     $idItemCreado = $this->itemDAO->create($datosJson);
+        // INSERCION en la tabla `items`, obteniendo el ID resultante
+        $itemId = DB::table('items')->insertGetId(
+            [
+                'title' => $payload['title'], 'artist' => $payload['artist'],
+                'format' => $payload['format'], 'year' => $payload['year'],
+                'origyear' => $payload['origYear'], 'label' => $payload['label'],
+                'rating' => $payload['rating'], 'comment' => $payload['comment'],
+                'buyprice' => $payload['buyPrice'], 'condition' => $payload['condition'],
+                'sellprice' => $payload['sellPrice']
+            ]
+        );
 
-    //     $itemEntidadCreado = $this->itemDAO->getItemById($idItemCreado);
-    //     $externalIdsEntidadCreados = $this->itemDAO->getExternalIdsByItemId($idItemCreado);
+        // INSERCIONES en la tabla `externalids`, usando el ID de ítem obtenido previamente
+        foreach($payload['externalIds'] as $clave => $valor) {
+            DB::table('externalids')->insert(
 
-    //     $arrayExternalIds = [];
+                ['supplier' => $clave, 'value' => $valor, 'itemid' => $itemId]
 
-    //     foreach($externalIdsEntidadCreados as $unExternalId) {
-    //         $arrayExternalIds[$unExternalId->getSupplier()] = $unExternalId->getValue();
-    //     }
+            );
+        }
 
-    //     if ($itemEntidadCreado) {
+        if ($itemId) {
 
-    //         // Mapea todo al un DTO para devolverlo al cliente
-    //         $itemDTO = new ItemDTO(
-    //             $itemEntidadCreado->getId(),
-    //             $itemEntidadCreado->getTitle(),
-    //             $itemEntidadCreado->getArtist(),
-    //             $itemEntidadCreado->getFormat(),
-    //             $itemEntidadCreado->getYear(),
-    //             $itemEntidadCreado->getOrigYear(),
-    //             $itemEntidadCreado->getLabel(),
-    //             $itemEntidadCreado->getRating(),
-    //             $itemEntidadCreado->getComment(),
-    //             $itemEntidadCreado->getBuyprice(),
-    //             $itemEntidadCreado->getCondition(),
-    //             $itemEntidadCreado->getSellPrice(),
-    //             $arrayExternalIds
-    //         );
+            // Obtiene el DTO del ítem creado
+            $itemDTO = $this->getItemDTOById($itemId);
 
-    //         $response = new ApiResponse('Created', 201, 'Item guardado', $itemDTO);
-    //         return $this->sendJsonResponse($response);
-    //     } else {
-    //         $response = new ApiResponse('ERROR', 500, 'No se pudo guardar el item', null);
-    //         return $this->sendJsonResponse($response);
-    //     }
-
-    // }
+           // Envía la respuesta
+           return response()->json([
+                'status' => 'Created',
+                'code' => 201,
+                'description' => 'Ítem guardado con ID ' . $itemId,
+                'data' => $itemDTO
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'ERROR',
+                'code' => 500,
+                'description' => 'No se pudo guardar el ítem',
+                'data' => null
+            ]);
+        }
+    }
 
     // // Actualiza datos de un item existente. No tienen por que recibir todos los campos, solo los que cambian.
     // public function update($datosJson) {
@@ -421,13 +360,69 @@ class ItemController extends Controller
     // }
 
 
-    // Funciones auxiliares
+    // ------------------------- Funciones auxiliares -------------------------
 
-    // private function sendJsonResponse(ApiResponse $response) {
-    //     header('Content-Type: application/json');
-    //     http_response_code($response->getCode());
-    //     echo $response->toJson();
-    // }
+
+    // Obtiene un itemDTO a partir de su ID
+    private function getItemDTOById(int $itemId) {
+        
+        // Obtiene la fila correspondiente al ítem buscado por ID
+        $itemFila = DB::table('items')->where('id', $itemId)->first();
+
+        // Si existe genera las entidades correspondientes y las mapea al DTO
+        if ($itemFila) {
+            // Modela la fila a una entidad Item
+            $itemEntity = new ItemEntity(
+                $itemFila->id, $itemFila->title, $itemFila->artist,
+                $itemFila->format, $itemFila->year, $itemFila->origyear,
+                $itemFila->label, $itemFila->rating, $itemFila->comment,
+                $itemFila->buyprice, $itemFila->condition, $itemFila->sellprice
+            );
+
+            $externalIdsArray = $this->getExternalIdsByItemId($itemEntity->getId());
+
+            $itemDTO = new ItemDTO(
+                $itemEntity->getTitle(),
+                $itemEntity->getArtist(),
+                $itemEntity->getFormat(),
+                $itemEntity->getYear(),
+                $itemEntity->getOrigYear(),
+                $itemEntity->getLabel(),
+                $itemEntity->getRating(),
+                $itemEntity->getComment(),
+                $itemEntity->getBuyprice(),
+                $itemEntity->getCondition(),
+                $itemEntity->getSellPrice(),
+                $externalIdsArray
+            );
+
+            return $itemDTO;
+
+        // Si no hay resultados, devuelve false
+        } else return false;
+    }
+
+
+    // Obtiene los External IDs de un ítem mediante su ID y los devuelve en un array
+    private function getExternalIdsByItemId(int $itemId): array {
+
+        // Obtiene una colección de filas con los externalIds correspondientes al ID del ítem
+        $externalIdsCollection = DB::table('externalids')->where('itemid', $itemId)->get();
+
+        $externalIdArray = [];
+
+        // Se modelan a entidades y se guardan en un array los datos que interesan para el DTO
+        foreach($externalIdsCollection as $externalIdsFila) {
+            $externalIdEntity = new ExternalIdEntity(
+                $externalIdsFila->id, $externalIdsFila->supplier,
+                $externalIdsFila->value, $externalIdsFila->itemid
+            );
+
+            $externalIdArray[$externalIdEntity->getSupplier()] = $externalIdEntity->getValue();
+        }
+
+        return $externalIdArray;
+    }
 
     // Comprueba que los valores recibidos cumplan los requisitos, si no genera el mensaje que se enviará en la respuesta HTTP
     public function chequearValores($item) {
