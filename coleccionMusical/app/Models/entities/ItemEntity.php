@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\entity;
+namespace App\Models\entities;
 
 class ItemEntity {
     
