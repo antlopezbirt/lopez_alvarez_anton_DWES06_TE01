@@ -2,7 +2,7 @@
 
 namespace App\Models\entities;
 
-class ExternalIdEntity {
+class ExternalIdsEntity {
     
     private $id;
     private $supplier;
@@ -11,9 +11,9 @@ class ExternalIdEntity {
 
 
     /**
-     * Constructor de la clase ExternalIdEntity.
+     * Constructor de la clase ExternalIdsEntity.
      *
-     * @param int $id El ID de la entrada de externalId.
+     * @param int $id El ID de la entrada de externalIds.
      * @param string $supplier El proveedor del ID externo.
      * @param string $value El valor del ID externo.
      * @param int $itemid El ID del item al que se hace referencia

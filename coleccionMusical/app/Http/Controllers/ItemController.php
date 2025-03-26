@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Item;
 use App\Models\entities\ItemEntity;
 use App\Models\DTOs\ItemDTO;
-use App\Models\entities\ExternalIdEntity;
+use App\Models\entities\ExternalIdsEntity;
 use TypeError;
 
 class ItemController extends Controller
@@ -211,24 +211,24 @@ class ItemController extends Controller
 
             // Modela la parte de externalIds a entidades ExternalIdEntity, acumulándolas en un array
 
-            $externalIdEntityArray = [];
+            $externalIdsEntityArray = [];
 
             foreach($validado['externalIds'] as $supplier => $value) {
-                $externalIdEntity = new ExternalIdEntity(
+                $externalIdsEntity = new ExternalIdsEntity(
                     0, $supplier, $value, $itemId
                 );
 
-                $externalIdEntityArray[] = $externalIdEntity;
+                $externalIdsEntityArray[] = $externalIdsEntity;
             }
 
             // Inserta en la tabla `externalids` las entidades generadas
-            foreach($externalIdEntityArray as $externalIdEntity) {
+            foreach($externalIdsEntityArray as $externalIdsEntity) {
                 DB::table('externalids')->insert(
 
                     [
-                        'supplier' => $externalIdEntity->getSupplier(), 
-                        'value' => $externalIdEntity->getValue(), 
-                        'itemid' => $externalIdEntity->getItemid()
+                        'supplier' => $externalIdsEntity->getSupplier(), 
+                        'value' => $externalIdsEntity->getValue(), 
+                        'itemid' => $externalIdsEntity->getItemid()
                     ]
 
                 );
@@ -261,79 +261,129 @@ class ItemController extends Controller
             return response()->json([
                 'status' => 'Bad Request',
                 'code' => 400,
-                'description' => 'Los datos recibidos están mal formados',
+                'description' => 'No se pudo crear el ítem: los datos están mal formados',
                 'data' => $request->getContent()
             ]);
         }
     }
 
     // Actualiza datos de un item existente. No tienen por que recibir todos los campos, solo los que cambian.
-    public function update($datosJson) {
+    public function update(Request $request) {
 
-        if(array_key_exists('id', $datosJson)) {
+        /*
+            Validación de los valores del payload.
 
-            // Comprueba que los campos que no son string tengan buen formato
-            if ($this->chequearValores($datosJson) !== true) {
-                    
-                $textoRespuesta = $this->chequearValores($datosJson);
+            En primer lugar se valida el ID, que es el único valor requerido.
+            El resto de valores son opcionales
 
-                $response = new ApiResponse('ERROR', 400, $textoRespuesta, $datosJson);
-                return $this->sendJsonResponse($response);
-            }
+            Se usan los mismos criterios que en el método de validación
+            desarrollado para la versión anterior de la API (chequearValores)
 
-            $itemId = $datosJson['id'];
+        */
 
-            try {
-                $itemEntidadActualizado = $this->itemDAO->updateItem($datosJson);
-                $externalIdsEntidadActualizados = $this->itemDAO->updateExternalIds($datosJson);
-            } catch (Error) {
-                $response = new ApiResponse('ERROR', 400, 'Los datos recibidos están mal formados', $datosJson);
-                return $this->sendJsonResponse($response);
-            }
+        $conIdValidado = $request->validate([
+            'id' => ['required', 'exists:items']
+        ]);
 
-            
+        if($conIdValidado) {
 
-            $arrayExternalIds = [];
+            $request['arrayConditions'] = array("M","NM","E","VG","G","P");
 
-            foreach($externalIdsEntidadActualizados as $unExternalId) {
-                $arrayExternalIds[$unExternalId->getSupplier()] = $unExternalId->getValue();
-            }
+            $validado = $request->validate([
+                'id' => ['required', 'exists:items'],
+                'title' => ['string'],
+                'artist' => ['string'], 
+                'format' => ['string'],
+                'year' => ['integer', 'gte:1900'],
+                'origYear' => ['integer', 'gte:1900'],
+                'label' => ['string'],
+                'rating' => ['gte:0', 'lte:10'], 
+                'comment' => ['string'], 
+                'buyPrice' => ['decimal:0,2'],
+                'condition' => ['in_array:arrayConditions.*'],
+                'sellPrice' => ['decimal:0,2'],
+                'externalIds' => ['array']
+            ]);
 
-            if ($itemEntidadActualizado) {
+            if($validado) {
 
-                // Mapea el DTO para devolverlo al cliente
-                $itemDTO = new ItemDTO(
-                    $itemEntidadActualizado->getId(),
-                    $itemEntidadActualizado->getTitle(),
-                    $itemEntidadActualizado->getArtist(),
-                    $itemEntidadActualizado->getFormat(),
-                    $itemEntidadActualizado->getYear(),
-                    $itemEntidadActualizado->getOrigYear(),
-                    $itemEntidadActualizado->getLabel(),
-                    $itemEntidadActualizado->getRating(),
-                    $itemEntidadActualizado->getComment(),
-                    $itemEntidadActualizado->getBuyprice(),
-                    $itemEntidadActualizado->getCondition(),
-                    $itemEntidadActualizado->getSellPrice(),
-                    $arrayExternalIds
-                );
+                // Recupera la entidad original de la BD
+                $itemEntidad = $this->getItemEntityByItemId($validado['id']);
 
-                if($itemDTO) {
-                    $response = new ApiResponse('OK', 204, 'Item ' . $itemId . ' actualizado.', $itemDTO);
-                        return $this->sendJsonResponse($response);
-                } else {
-                    $response = new ApiResponse('ERROR', 500, 'No se pudo acualizar el ítem ' . $itemId . '.', null);
-                    return $this->sendJsonResponse($response);
+                // Aplica los cambios sobre ella
+                foreach($validado as $propiedad => $valorActualizado) {
+                    // No se debe editar el ID, y externalIds no pertenece a esta entidad
+                    if($propiedad != 'id' && $propiedad != 'externalIds') {
+                        $setter = 'set' . ucwords($propiedad);
+                        $itemEntidad->$setter($valorActualizado);
+                    }
                 }
+
+                // Se actualiza la tabla 'items' con los datos de la entidad
+                DB::table('items')
+                    ->where('id', $validado['id'])
+                    ->update([
+                        'title' => $itemEntidad->getTitle(),
+                        'artist' => $itemEntidad->getArtist(),
+                        'format' => $itemEntidad->getFormat(),
+                        'year' => $itemEntidad->getYear(),
+                        'origyear' => $itemEntidad->getOrigYear(),
+                        'label' => $itemEntidad->getLabel(),
+                        'rating' => $itemEntidad->getRating(),
+                        'comment' => $itemEntidad->getComment(),
+                        'buyprice' => $itemEntidad->getBuyPrice(),
+                        'condition' => $itemEntidad->getCondition(),
+                        'sellprice' => $itemEntidad->getSellPrice()
+                    ]);
+
+
+                // En el caso de recibir externalIds, deben borrarse de la BD los que existan previamente
+                if(array_key_exists('externalIds', $validado)) {
+                    DB::table('externalids')
+                        ->where('itemid', $validado['id'])
+                        ->delete();
+
+                    // A continuación se insertan los que se hayan recibido del cliente
+                    foreach($validado['externalIds'] as $supplier => $value) {
+                        DB::table('externalids')
+                            ->insert([
+                                'supplier' => $supplier,
+                                'value' => $value,
+                                'itemid' => $validado['id']
+                            ]);
+                    }
+                }
+                
+
+                // Por último se crea el itemDTO con los datos actualizados y se devuelve
+                $itemDTOActualizado = $this->getItemDTOById($validado['id']);
+
+                // Envía la respuesta
+                return response()->json([
+                    'status' => 'No Content',
+                    'code' => 204,
+                    'description' => 'Ítem actualizado',
+                    'data' => $itemDTOActualizado
+                ]);
+
+            // Alguno de los datos no ha validado
             } else {
-                // No ha encontrado el item
-                $response = new ApiResponse('ERROR', 404, 'No existe un ítem con ID ' . $itemId, null);
-                return $this->sendJsonResponse($response);
+                return response()->json([
+                    'status' => 'Bad Request',
+                    'code' => 400,
+                    'description' => 'No se pudo actualizar el ítem: los datos están mal formados',
+                    'data' => $request->getContent()
+                ]);
             }
+
+        // No ha encontrado el item con ese ID
         } else {
-            // No ha encontrado el item
-            $response = new ApiResponse('ERROR', 400, 'Es necesario un ID para actualizar un ítem', null);
-            return $this->sendJsonResponse($response);
+            return response()->json([
+                'status' => 'Bad Request',
+                'code' => 404,
+                'description' => 'No se pudo actualizar el ítem: no existe ese ID',
+                'data' => $request->getContent()
+            ]);
         }
     }
 
@@ -375,14 +425,14 @@ class ItemController extends Controller
                 return response()->json([
                     'status' => 'No Content',
                     'code' => 204,
-                    'description' => 'Item ' . $itemId . ' eliminado',
+                    'description' => 'Item eliminado',
                     'data' => $itemDTOAEliminar
                 ]);
             } else {
                 return response()->json([
                     'status' => 'Internal Server Error',
                     'code' => 500,
-                    'description' => 'No se pudo eliminar el ítem con ID ' . $itemId,
+                    'description' => 'No se pudo eliminar el ítem',
                     'data' => null
                 ]);
             }
@@ -392,7 +442,7 @@ class ItemController extends Controller
             return response()->json([
                 'status' => 'Not Found',
                 'code' => 404,
-                'description' => 'No existe un ítem con ID ' . $itemId,
+                'description' => 'No existe un ítem con ese ID',
                 'data' => null
             ]);
         }
@@ -405,23 +455,20 @@ class ItemController extends Controller
 
     // Obtiene un itemDTO a partir de su ID y lo devuelve, o false si no existe
     private function getItemDTOById(int $itemId): ItemDTO|false {
-        
-        // Obtiene la fila correspondiente al ítem buscado por ID
-        $itemFila = DB::table('items')
-            ->where('id', $itemId)
-            ->first();
 
-        // Si existe genera las entidades correspondientes y las mapea al DTO
-        if ($itemFila) {
-            // Modela la fila a una entidad Item
-            $itemEntity = new ItemEntity(
-                $itemFila->id, $itemFila->title, $itemFila->artist,
-                $itemFila->format, $itemFila->year, $itemFila->origyear,
-                $itemFila->label, $itemFila->rating, $itemFila->comment,
-                $itemFila->buyprice, $itemFila->condition, $itemFila->sellprice
-            );
+        $itemEntity = $this->getItemEntityByItemId($itemId);
 
-            $externalIdsArray = $this->getExternalIdsByItemId($itemEntity->getId());
+        // Si existe la entidad Item, busca las entidades externalIds
+        if ($itemEntity) {
+
+
+            $externalIdsEntities = $this->getExternalIdsByItemId($itemId);
+
+            $externalIdsArray = [];
+
+            foreach($externalIdsEntities as $externalIdsEntity) {
+                $externalIdsArray[$externalIdsEntity->getSupplier()] = $externalIdsEntity->getValue();
+            }
 
             $itemDTO = new ItemDTO(
                 $itemEntity->getTitle(),
@@ -444,6 +491,28 @@ class ItemController extends Controller
         } else return false;
     }
 
+    // Obtiene la entidad del ítem a partir de su ID o false si no existe
+    private function getItemEntityByItemId(int $itemId): ItemEntity|false {
+
+        // Obtiene la fila correspondiente al ítem buscado por ID
+        $itemFila = DB::table('items')
+            ->where('id', $itemId)
+            ->first();
+
+        // Si existe genera las entidades correspondientes y las mapea al DTO
+        if ($itemFila) {
+            // Modela la fila a una entidad Item
+            $itemEntity = new ItemEntity(
+                $itemFila->id, $itemFila->title, $itemFila->artist,
+                $itemFila->format, $itemFila->year, $itemFila->origyear,
+                $itemFila->label, $itemFila->rating, $itemFila->comment,
+                $itemFila->buyprice, $itemFila->condition, $itemFila->sellprice
+            );
+
+            return $itemEntity;
+        } else return false;
+    }
+
 
     // Obtiene los externalIds de un ítem mediante su ID y los devuelve en un array (puede estar vacío)
     private function getExternalIdsByItemId(int $itemId): array {
@@ -453,32 +522,32 @@ class ItemController extends Controller
             ->where('itemid', $itemId)
             ->get();
 
-        $externalIdArray = [];
+        $externalIdsArray = [];
 
         // Se modelan a entidades y se guardan en un array los datos que interesan para el DTO
         foreach($externalIdsCollection as $externalIdsFila) {
-            $externalIdEntity = new ExternalIdEntity(
+            $externalIdsEntity = new ExternalIdsEntity(
                 $externalIdsFila->id, $externalIdsFila->supplier,
                 $externalIdsFila->value, $externalIdsFila->itemid
             );
 
-            $externalIdArray[$externalIdEntity->getSupplier()] = $externalIdEntity->getValue();
+            $externalIdsArray[] = $externalIdsEntity;
         }
 
-        return $externalIdArray;
+        return $externalIdsArray;
     }
 
     // Comprueba que los valores recibidos cumplan los requisitos, si no genera el mensaje que se enviará en la respuesta HTTP
-    public function chequearValores($item) {
-        $respuesta = 'ERROR: El campo ';
-        if (array_key_exists('year', $item) && (!filter_var($item['year'], FILTER_VALIDATE_INT) || intval($item['year']) <= 1900 || intval($item['year']) >= 2156)) return $respuesta . 'year debe ser un entero entre 1901 y 2155';
-        if (array_key_exists('origYear', $item) && (!filter_var($item['origYear'], FILTER_VALIDATE_INT) || intval($item['origYear']) <= 1900 || intval($item['year']) >= 2156)) return $respuesta . 'origYear debe ser un entero entre 1901 y 2155';
-        if (array_key_exists('rating', $item) && (!filter_var($item['rating'], FILTER_VALIDATE_INT) || intval($item['rating']) < 1 || intval($item['rating']) > 10)) return $respuesta . 'rating debe ser un entero entre 1 y 10';
-        if (array_key_exists('buyPrice', $item) && (!is_numeric($item['buyPrice']) || intval($item['buyPrice']) < 0)) return $respuesta . 'buyPrice debe ser un número mayor o igual que cero';
-        if (array_key_exists('condition', $item) && !in_array($item['condition'], ['M','NM','E','VG','G','P'])) return $respuesta . 'condition debe contener un valor de la Goldmine Grading Guide (M, NM, E, VG, G, P)';
-        if (array_key_exists('sellPrice', $item) && (!is_numeric($item['sellPrice']) || intval($item['sellPrice']) < 0)) return $respuesta . 'sellPrice debe ser un número mayor o igual que cero';
-        if (array_key_exists('externalIds', $item) && !is_array($item['externalIds'])) return $respuesta . 'externalIds debe ser un array asociativo de identificadores externos';
+    // public function chequearValores($item) {
+    //     $respuesta = 'ERROR: El campo ';
+    //     if (array_key_exists('year', $item) && (!filter_var($item['year'], FILTER_VALIDATE_INT) || intval($item['year']) <= 1900 || intval($item['year']) >= 2156)) return $respuesta . 'year debe ser un entero entre 1901 y 2155';
+    //     if (array_key_exists('origYear', $item) && (!filter_var($item['origYear'], FILTER_VALIDATE_INT) || intval($item['origYear']) <= 1900 || intval($item['year']) >= 2156)) return $respuesta . 'origYear debe ser un entero entre 1901 y 2155';
+    //     if (array_key_exists('rating', $item) && (!filter_var($item['rating'], FILTER_VALIDATE_INT) || intval($item['rating']) < 1 || intval($item['rating']) > 10)) return $respuesta . 'rating debe ser un entero entre 1 y 10';
+    //     if (array_key_exists('buyPrice', $item) && (!is_numeric($item['buyPrice']) || intval($item['buyPrice']) < 0)) return $respuesta . 'buyPrice debe ser un número mayor o igual que cero';
+    //     if (array_key_exists('condition', $item) && !in_array($item['condition'], ['M','NM','E','VG','G','P'])) return $respuesta . 'condition debe contener un valor de la Goldmine Grading Guide (M, NM, E, VG, G, P)';
+    //     if (array_key_exists('sellPrice', $item) && (!is_numeric($item['sellPrice']) || intval($item['sellPrice']) < 0)) return $respuesta . 'sellPrice debe ser un número mayor o igual que cero';
+    //     if (array_key_exists('externalIds', $item) && !is_array($item['externalIds'])) return $respuesta . 'externalIds debe ser un array asociativo de identificadores externos';
 
-        return true;
-    }
+    //     return true;
+    // }
 }
