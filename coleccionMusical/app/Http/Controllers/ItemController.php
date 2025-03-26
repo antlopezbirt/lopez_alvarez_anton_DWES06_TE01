@@ -90,20 +90,41 @@ class ItemController extends Controller
     }
 
 
-    // public function getByArtist($artist) {
+    public function getByArtist($artist) {
 
-    //     $artist = ucwords(str_replace('-', ' ', $artist));
+        $artist = ucwords(str_replace('-', ' ', $artist));
 
-    //     $items = $this->itemDAO->getItemsByArtist($artist);
+        $itemsCollection = DB::table('items')
+            ->where('artist', $artist)
+            ->get();
 
-    //     if($items) {
-    //         $response = new ApiResponse('OK', 200, 'Todos los ítems del artista solicitado (' . $artist . ')', $items);
-    //         return $this->sendJsonResponse($response);
-    //     } else {
-    //         $response = new ApiResponse('ERROR', 404, 'Artista no encontrado (' . $artist . ')', null);
-    //         return $this->sendJsonResponse($response);
-    //     }
-    // }
+        $itemsDTO = [];
+
+        foreach($itemsCollection as $itemFila) {
+
+            // Obtiene un itemDTO a partir del ID del objeto devuelto por el ORM
+            $itemDTO = $this->getItemDTOById($itemFila->id);
+
+            $itemsDTO[] = $itemDTO;
+        }
+
+        // Si hay ocurrencias, se devuelven, en caso contrario un 404.
+        if(count($itemsDTO)>0) {
+            return response()->json([
+                'status' => 'OK',
+                'code' => 200,
+                'description' => 'Todos los ítems del artista ' . $artist . ' (' . count($itemsDTO) . ')',
+                'data' => $itemsDTO
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'Not Found',
+                'code' => 404,
+                'description' => 'No hay ítems de ese artista (' . $artist . ')',
+                'data' => null
+            ]);
+        }
+    }
 
 
     // public function getByFormat($format) {
@@ -118,6 +139,40 @@ class ItemController extends Controller
     //         return $this->sendJsonResponse($response);
     //     }
     // }
+
+    public function getByFormat($format) {
+
+        $itemsCollection = DB::table('items')
+            ->where('format', $format)
+            ->get();
+
+        $itemsDTO = [];
+
+        foreach($itemsCollection as $itemFila) {
+
+            // Obtiene un itemDTO a partir del ID del objeto devuelto por el ORM
+            $itemDTO = $this->getItemDTOById($itemFila->id);
+
+            $itemsDTO[] = $itemDTO;
+        }
+
+        // Si hay ocurrencias, se devuelven, en caso contrario un 404.
+        if(count($itemsDTO)>0) {
+            return response()->json([
+                'status' => 'OK',
+                'code' => 200,
+                'description' => 'Todos los ítems con formato ' . $format . ' (' . count($itemsDTO) . ')',
+                'data' => $itemsDTO
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'Not Found',
+                'code' => 404,
+                'description' => 'No hay ítems con ese formato (' . $format . ')',
+                'data' => null
+            ]);
+        }
+    }
 
 
 
@@ -537,17 +592,4 @@ class ItemController extends Controller
         return $externalIdsArray;
     }
 
-    // Comprueba que los valores recibidos cumplan los requisitos, si no genera el mensaje que se enviará en la respuesta HTTP
-    // public function chequearValores($item) {
-    //     $respuesta = 'ERROR: El campo ';
-    //     if (array_key_exists('year', $item) && (!filter_var($item['year'], FILTER_VALIDATE_INT) || intval($item['year']) <= 1900 || intval($item['year']) >= 2156)) return $respuesta . 'year debe ser un entero entre 1901 y 2155';
-    //     if (array_key_exists('origYear', $item) && (!filter_var($item['origYear'], FILTER_VALIDATE_INT) || intval($item['origYear']) <= 1900 || intval($item['year']) >= 2156)) return $respuesta . 'origYear debe ser un entero entre 1901 y 2155';
-    //     if (array_key_exists('rating', $item) && (!filter_var($item['rating'], FILTER_VALIDATE_INT) || intval($item['rating']) < 1 || intval($item['rating']) > 10)) return $respuesta . 'rating debe ser un entero entre 1 y 10';
-    //     if (array_key_exists('buyPrice', $item) && (!is_numeric($item['buyPrice']) || intval($item['buyPrice']) < 0)) return $respuesta . 'buyPrice debe ser un número mayor o igual que cero';
-    //     if (array_key_exists('condition', $item) && !in_array($item['condition'], ['M','NM','E','VG','G','P'])) return $respuesta . 'condition debe contener un valor de la Goldmine Grading Guide (M, NM, E, VG, G, P)';
-    //     if (array_key_exists('sellPrice', $item) && (!is_numeric($item['sellPrice']) || intval($item['sellPrice']) < 0)) return $respuesta . 'sellPrice debe ser un número mayor o igual que cero';
-    //     if (array_key_exists('externalIds', $item) && !is_array($item['externalIds'])) return $respuesta . 'externalIds debe ser un array asociativo de identificadores externos';
-
-    //     return true;
-    // }
 }

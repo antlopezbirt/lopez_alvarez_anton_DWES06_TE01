@@ -32,8 +32,8 @@ Route::controller('App\Http\Controllers\ItemController')->prefix('item')->group(
     // GET
     Route::get('/', 'getAll')->name('itemGetAll');
     Route::get('/{id}', 'getById')->whereNumber('id')->name('itemGetById');
-    Route::get('/artist/{artist}', 'getByArtist')->whereAlphaNumeric('artist')->name('itemGetByArtist');
-    Route::get('/format/{format}', 'getByFormat')->whereAlphaNumeric('format')->name('itemGetByFormat');
+    Route::get('/artist/{artist}', 'getByArtist')->where('artist', '^[a-zA-Z0-9\-]+$')->name('itemGetByArtist');
+    Route::get('/format/{format}', 'getByFormat')->where('format', '^[a-zA-Z0-9\-]+$')->name('itemGetByFormat');
     Route::get('/order/{key}/{order}', 'sortByKey')
         ->whereIn('key', ['title','artist','format','year','origYear','label','rating', 'comment','buyPrice', 'condition','sellPrice'])
         ->whereIn('order', ['asc', 'desc'])
