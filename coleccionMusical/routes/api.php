@@ -14,17 +14,18 @@ use Illuminate\Support\Facades\Route;
     peticiones, evitando así repetir el namespace del controlador ItemController
     en todas las rutas.
 
-    https://laravel.com/docs/12.x/routing#route-group-controllers
-    
     Además, se ha aprovechado prefix para añadir 'item', que nos ahorra repetir
     también esa palabra en las rutas, quedando así tal y como están definidas
     en el enunciado.
 
-    Algunas rutas GET "pre-validan" los parámetros de la petición con los métodos
-    genéricos que provee Laravel. Si se supera esta validación, el controlador
-    se encargará de ejecutar otra validación más exigente, también para los métodos
-    POST, PUT y DELETE. En caso contrario, se llega a la ruta de fallback, que
-    devuelve un 404 con un mensaje personalizado.
+    Las rutas GET validan los parámetros de la petición con los métodos
+    que provee Laravel en la clase Route.
+
+    En el caso de las rutas POST, PUT y DELETE es el controlador quien se encarga
+    de validar el contenido de la petición.
+
+    En caso de que no se valide la ruta por este u otro motivo, se llega a la
+    ruta de fallback, que devuelve un 404.
 */
 
 Route::controller('App\Http\Controllers\ItemController')->prefix('item')->group(function() {
@@ -34,9 +35,10 @@ Route::controller('App\Http\Controllers\ItemController')->prefix('item')->group(
     Route::get('/{id}', 'getById')->whereNumber('id')->name('itemGetById');
     Route::get('/artist/{artist}', 'getByArtist')->where('artist', '^[a-zA-Z0-9\-]+$')->name('itemGetByArtist');
     Route::get('/format/{format}', 'getByFormat')->where('format', '^[a-zA-Z0-9\-]+$')->name('itemGetByFormat');
+    Route::pattern('order', '(?i)order(?-i)');
     Route::get('/order/{key}/{order}', 'sortByKey')
-        ->whereIn('key', ['title','artist','format','year','origYear','label','rating', 'comment','buyPrice', 'condition','sellPrice'])
-        ->whereIn('order', ['asc', 'desc'])
+        ->whereIn('key', ['id','title','artist','format','year','origYear','label','rating', 'comment','buyPrice', 'condition','sellPrice'])
+        ->where('order', '^asc|ASC|desc|DESC$')
         ->name('itemSortByKey');
     
     // POST

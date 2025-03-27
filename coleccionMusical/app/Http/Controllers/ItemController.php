@@ -127,19 +127,6 @@ class ItemController extends Controller
     }
 
 
-    // public function getByFormat($format) {
-
-    //     $items = $this->itemDAO->getItemsByFormat($format);
-
-    //     if($items) {
-    //         $response = new ApiResponse('OK', 200, 'Todos los ítems del formato solicitado (' . $format . ')', $items);
-    //         return $this->sendJsonResponse($response);
-    //     } else {
-    //         $response = new ApiResponse('ERROR', 404, 'Formato no encontrado (' . $format . ')', null);
-    //         return $this->sendJsonResponse($response);
-    //     }
-    // }
-
     public function getByFormat($format) {
 
         $itemsCollection = DB::table('items')
@@ -177,41 +164,40 @@ class ItemController extends Controller
 
 
 
-    // public function sortByKey($key, $order) {
+    public function sortByKey($clave, $orden) {
 
-    //     if ($key === 'externalIds') {
-    //         // No se puede ordenar por externalIds
-    //         $response = new ApiResponse('ERROR', 400, 'ERROR: No se puede ordenar por externalIds al ser un array', null);
-    //         return $this->sendJsonResponse($response);
-    //     }
+        $itemsCollection = DB::table('items')
+            ->orderBy($clave, $orden)
+            ->get();
 
-    //     if (!in_array(strtolower($order), ['asc', 'desc'])) {
-    //         // El tipo de orden es incorrecto
-    //         $response = new ApiResponse('ERROR', 400, 'El tipo de orden solo puede ser ASC o DESC', null);
-    //         return $this->sendJsonResponse($response);
-    //     }
+        $itemsDTO = [];
 
-    //     try {
-            
-    //         // Intenta ordenar con la clave y el tipo de orden recibidos
-    //         $items = $this->itemDAO->sortItemsByKey($key, $order);
+        foreach($itemsCollection as $itemFila) {
 
-    //         if($items) {
-    //             $response = new ApiResponse('OK', 200, 'Listado de ítems ordenados según el criterio solicitado (' . $key . ', ' . $order . ')', $items);
-    //             return $this->sendJsonResponse($response);
-    //         } else {
-    //             $response = new ApiResponse('ERROR', 404, 'No se han encontrado ítems', null);
-    //             return $this->sendJsonResponse($response);
-    //         }
-    
-    //     // Si la columna por la que se ha pedido ordenar no existe, o el tipo de orden es erroneo, llega una excepcion y se devuelve un 400
-    //     } catch (Exception $e) {
-            
-    //         $response = new ApiResponse('ERROR', 400, 'La clave para ordenar (' . $key . ') no existe', null);
-    //         return $this->sendJsonResponse($response);
-    //     }
+            // Obtiene un itemDTO a partir del ID del objeto devuelto por el ORM
+            $itemDTO = $this->getItemDTOById($itemFila->id);
 
-    // }
+            $itemsDTO[] = $itemDTO;
+        }
+
+        // Ya no necesitamos la utilidad ApiJsonResponse, Laravel tiene incorporada esta función
+        if(isset($itemsDTO)) {
+            return response()->json([
+                'status' => 'OK',
+                'code' => 200,
+                'description' => 'Listado de ítems ordenados según el criterio solicitado (' . $clave . ', ' . $orden . ')',
+                'data' => $itemsDTO
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'Not Found',
+                'code' => 404,
+                'description' => 'No hay ítems',
+                'data' => null
+            ]);
+        }
+
+    }
 
 
     // Guarda un nuevo item en la BD y en caso de exito lo devuelve con un 201
@@ -230,14 +216,14 @@ class ItemController extends Controller
             'title' => ['required', 'string'],
             'artist' => ['required', 'string'], 
             'format' => ['required', 'string'],
-            'year' => ['required', 'integer', 'gte:1900'],
-            'origYear' => ['required', 'integer', 'gte:1900'],
+            'year' => ['required', 'integer', 'gt:1900', 'lt:2156'],
+            'origYear' => ['required', 'integer', 'gte:1900', 'lt:2156'],
             'label' => ['required', 'string'],
-            'rating' => ['required', 'gte:0', 'lte:10'], 
+            'rating' => ['required', 'gte:1', 'lte:10'], 
             'comment' => ['required', 'string'], 
-            'buyPrice' => ['required', 'decimal:0,2'],
+            'buyPrice' => ['required', 'decimal:0,2', 'gte:0'],
             'condition' => ['required', 'in_array:arrayConditions.*'],
-            'sellPrice' => ['decimal:0,2'],
+            'sellPrice' => ['decimal:0,2', 'gte:0'],
             'externalIds' => ['array']
         ]);
         
@@ -349,14 +335,14 @@ class ItemController extends Controller
                 'title' => ['string'],
                 'artist' => ['string'], 
                 'format' => ['string'],
-                'year' => ['integer', 'gte:1900'],
-                'origYear' => ['integer', 'gte:1900'],
+                'year' => ['integer', 'gt:1900', 'lt:2156'],
+                'origYear' => ['integer', 'gt:1900', 'lt:2156'],
                 'label' => ['string'],
-                'rating' => ['gte:0', 'lte:10'], 
+                'rating' => ['gte:1', 'lte:10'], 
                 'comment' => ['string'], 
-                'buyPrice' => ['decimal:0,2'],
+                'buyPrice' => ['decimal:0,2', 'gte:0'],
                 'condition' => ['in_array:arrayConditions.*'],
-                'sellPrice' => ['decimal:0,2'],
+                'sellPrice' => ['decimal:0,2', 'gte:0'],
                 'externalIds' => ['array']
             ]);
 
@@ -446,33 +432,26 @@ class ItemController extends Controller
     // Elimina un ítem a partir del ID recibido en el body de la petición
     public function delete(Request $request) {
 
-        $payload = json_decode($request->getContent(), true);
 
-        $itemId = $payload['id'];
-
-        // Comprueba si los datos están bien formados ("id" con valor integer)
-        try {
-            $itemDTOAEliminar = $this->getItemDTOById($itemId);
-        } catch (TypeError) {
-            // En caso contrario devuelve un 400 con el error en la descripción
-            return response()->json([
-                'status' => 'Bad Request',
-                'code' => 400,
-                'description' => 'TypeError: Los datos recibidos están mal formados',
-                'data' => $payload
-            ]);
-        }
+        $validado = $request->validate([
+            'id' => ['required', 'exists:items']
+        ]);
 
         // Si existe el ítem a eliminar, procede con la eliminación
-        if($itemDTOAEliminar) {
+        if($validado['id']) {
+
+            $idAEliminar = $validado['id'];
+
+
+            $itemDTOAEliminar = $this->getItemDTOById($idAEliminar);
 
             // BORRADO en la tabla `items`
             $itemBorrado = DB::table('items')
-                ->delete($itemId);
+                ->delete($idAEliminar);
 
-            // BORRADO en la tabla `externalids`
+            // BORRADO en la tabla `externalids`, aunque la restricción FK_EXTERNALID_TITLE_ID en teoría se encarga de ello
             DB::table('externalids')
-                ->where('itemid', $itemId)
+                ->where('itemid', $idAEliminar)
                 ->delete();
 
             // Envía las respuestas correspondientes
