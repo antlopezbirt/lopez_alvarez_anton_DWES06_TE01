@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('condition', 2); # VARCHAR de longitud 2
             $table->decimal('sellprice', 6, 2)->default(0.00); # Decimal de longitud 6 y 2 decimales con valor 0.00 por defecto
 
-            $table->timestamps();
+            $table->timestamps(); // Se incluyen las columnas de timestamps, pueden ser útiles
         });
 
         // INSERCIONES DE DATOS INICIALES

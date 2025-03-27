@@ -11,7 +11,7 @@ class ExternalId extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'supplier', 'value', 'itemid'
+        'supplier', 'value', 'item_id'
     ];
 
     /**

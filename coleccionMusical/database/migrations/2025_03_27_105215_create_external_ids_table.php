@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('supplier', 45); # VARCHAR de tamaño 45
             $table->string('value', 100); # VARCHAR de tamaño 100
             $table->unsignedBigInteger('item_id'); # FK
-            $table->timestamps();
+            
+            $table->timestamps(); // Se incluyen las columnas de timestamps, pueden ser útiles
 
             # Constraint de la FK
             $table->foreign('item_id')->references('id')->on('items')
