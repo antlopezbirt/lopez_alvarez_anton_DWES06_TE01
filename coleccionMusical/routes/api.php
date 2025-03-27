@@ -18,11 +18,11 @@ use Illuminate\Support\Facades\Route;
     también esa palabra en las rutas, quedando así tal y como están definidas
     en el enunciado.
 
-    Las rutas GET validan los parámetros de la petición con los métodos
-    que provee Laravel en la clase Route.
+    Las rutas GET hacen una validación suave de los parámetros de la petición.
+    Posteriormente, el controlador hará una validación más a fondo si es necesario.
 
     En el caso de las rutas POST, PUT y DELETE es el controlador quien se encarga
-    de validar el contenido de la petición.
+    a solas de validar los parámetros del body de la petición.
 
     En caso de que no se valide la ruta por este u otro motivo, se llega a la
     ruta de fallback, que devuelve un 404.
@@ -35,16 +35,12 @@ Route::controller('App\Http\Controllers\ItemController')->prefix('item')->group(
     Route::get('/{id}', 'getById')->whereNumber('id')->name('itemGetById');
     Route::get('/artist/{artist}', 'getByArtist')->where('artist', '^[a-zA-Z0-9\-]+$')->name('itemGetByArtist');
     Route::get('/format/{format}', 'getByFormat')->where('format', '^[a-zA-Z0-9\-]+$')->name('itemGetByFormat');
-    Route::pattern('order', '(?i)order(?-i)');
-    Route::get('/order/{key}/{order}', 'sortByKey')
-        ->whereIn('key', ['id','title','artist','format','year','origYear','label','rating', 'comment','buyPrice', 'condition','sellPrice'])
-        ->where('order', '^asc|ASC|desc|DESC$')
-        ->name('itemSortByKey');
+    Route::get('/order/{key}/{order}', 'sortByKey')->where('key', '^[a-zA-Z]+$')->where('order', '^[a-zA-Z]+$')->name('itemSortByKey');
     
     // POST
-    Route::post('/create', 'create')->name('itemCreate');
-    Route::put('/update', 'update')->name('itemUpdate');
-    Route::delete('/delete', 'delete')->name('itemDelete');
+    Route::post('/', 'create')->name('itemCreate');
+    Route::put('/{id}', 'update')->name('itemUpdate');
+    Route::delete('/', 'delete')->name('itemDelete');
 
     // FALLBACK
     Route::fallback(function(Request $request) {

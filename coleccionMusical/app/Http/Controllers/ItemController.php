@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 use App\Models\Item;
 use App\Models\ExternalId;
@@ -52,29 +52,32 @@ class ItemController extends Controller
     }
 
     // Busca un item por ID y lo devuelve en la respuesta
-    public function getById(int $id) {
+    public function getById(int $id, Request $request) {
 
-        $itemModel = Item::find($id);
+        // Validación: si el ID no existe en la tabla se devuelve directamente un 404
+        $validator = Validator::make($request->route()->parameters(), [
+            'id' => ['required', 'exists:items']
+        ]);
 
-        // Devuelve el DTO o un 404
-        if ($itemModel) {
-
-            $itemDTO = $this->getItemDTOByModel($itemModel);
-
-            return response()->json([
-                'status' => 'OK',
-                'code' => 200,
-                'description' => 'Ítem con ID ' . $id,
-                'data' => $itemDTO
-            ]);
-        } else {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => 'Not Found',
                 'code' => 404,
-                'description' => 'No existe un ítem con ID ' . $id,
+                'description' => 'No existe un ítem con ese ID',
                 'data' => null
             ]);
         }
+
+        $itemModel = Item::find($id);
+
+        // Devuelve el DTO
+        $itemDTO = $this->getItemDTOByModel($itemModel);
+        return response()->json([
+            'status' => 'OK',
+            'code' => 200,
+            'description' => 'Ítem con ID ' . $id,
+            'data' => $itemDTO
+        ]);
     }
 
     // Busca los ítems de un artista y los devuelve en la respuesta
@@ -141,7 +144,26 @@ class ItemController extends Controller
     }
 
     // Ordena y devuelve todos los ítems según el criterio recibido (columna y sentido del orden)
-    public function sortByKey($columna, $orden) {
+    public function sortByKey(string $columna, string $orden, Request $request) {
+
+        // Validación: si la columna no existe o el orden no es asc|desc, se devuelve un 400 con el mensaje de error
+        $ordenables = ['id','title','artist','format','year','origYear','label','rating', 'comment','buyPrice', 'condition','sellPrice'];
+        $validator = Validator::make($request->route()->parameters(), [
+            'key' => ['required', 'in:' . implode(',', $ordenables)],
+            'order' => ['required', 'regex:/^asc|desc$/i']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'Bad Request',
+                'code' => 400,
+                'description' => 'Los parámetros son incorrectos, revise la documentación',
+                'data' => $request->route()->parameters()
+            ]);
+        }
+
+        $columna = strtolower($columna);
+        $orden = strtolower($orden);
 
         $itemModels = Item::orderBy($columna, $orden)->get();
 
@@ -176,16 +198,11 @@ class ItemController extends Controller
     // Guarda un nuevo item en la BD y en caso de exito lo devuelve con un 201
     public function create(Request $request) {
 
-        /*
-            Validación de los valores del payload.
+        $parametros = json_decode($request->getContent(), 1);
 
-            Se usan los mismos criterios que en el método de validación
-            desarrollado para la versión anterior de la API (chequearValores)
-        */
-
+        // Validación del payload (mismos criterios que en la versión de PHP nativo)
         $request['arrayConditions'] = array("M","NM","E","VG","G","P");
-
-        $validado = $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => ['required', 'string'],
             'artist' => ['required', 'string'], 
             'format' => ['required', 'string'],
@@ -199,217 +216,200 @@ class ItemController extends Controller
             'sellPrice' => ['decimal:0,2', 'gte:0'],
             'externalIds' => ['array']
         ]);
-        
-        // Si los datos validan, se procede con la lógica de persistencia del Item
-        if($validado) {
 
-            // Modela los datos recibidos a un Item y lo guarda en la BD
-            $itemModel = Item::create(
-                [
-                    'title' => $validado['title'],
-                    'artist' => $validado['artist'], 
-                    'format' => $validado['format'],
-                    'year' => $validado['year'],
-                    'origyear' => $validado['origYear'],
-                    'label' => $validado['label'],
-                    'rating' => $validado['rating'], 
-                    'comment' => $validado['comment'], 
-                    'buyprice' => $validado['buyPrice'],
-                    'condition' => $validado['condition'],
-                    'sellprice' => $validado['sellPrice']
-                ]
-            );
-
-            // Modela los externalIds y los guarda en la BD
-            foreach($validado['externalIds'] as $supplier => $value) {
-
-                ExternalId::create(
-                    [
-                        'supplier' => $supplier,
-                        'value' => $value,
-                        'item_id' => $itemModel->id,
-                    ]
-                );
-            }
-
-            // Si se ha logrado insertar el ítem, se devuelve el DTO con un 201, si no un 500.
-            if ($itemModel) {
-
-                // Obtiene el DTO del ítem creado
-                $itemDTO = $this->getItemDTOByModel($itemModel);
-
-                return response()->json([
-                    'status' => 'Created',
-                    'code' => 201,
-                    'description' => 'Ítem guardado',
-                    'data' => $itemDTO
-                ]);
-            } else {
-                return response()->json([
-                    'status' => 'Internal Server Error',
-                    'code' => 500,
-                    'description' => 'No se pudo guardar el ítem',
-                    'data' => null
-                ]);
-            }
-
-        // Si no valida, se devuelve el error con un 400
-        } else {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => 'Bad Request',
                 'code' => 400,
-                'description' => 'No se pudo crear el ítem: los datos están mal formados',
-                'data' => $request->getContent()
+                'description' => 'Los parámetros son incorrectos, revise la documentación',
+                'data' => $parametros
+            ]);
+        }
+        
+        // Si los datos validan, se procede con la lógica de persistencia del Item
+        // Modela los datos recibidos a un Item y lo guarda en la BD
+        $itemModel = Item::create(
+            [
+                'title' => $parametros['title'],
+                'artist' => $parametros['artist'], 
+                'format' => $parametros['format'],
+                'year' => $parametros['year'],
+                'origyear' => $parametros['origYear'],
+                'label' => $parametros['label'],
+                'rating' => $parametros['rating'], 
+                'comment' => $parametros['comment'], 
+                'buyprice' => $parametros['buyPrice'],
+                'condition' => $parametros['condition'],
+                'sellprice' => $parametros['sellPrice']
+            ]
+        );
+
+        // Modela los externalIds y los guarda en la BD
+        foreach($parametros['externalIds'] as $supplier => $value) {
+
+            ExternalId::create(
+                [
+                    'supplier' => $supplier,
+                    'value' => $value,
+                    'item_id' => $itemModel->id,
+                ]
+            );
+        }
+
+        // Si se ha logrado insertar el ítem, se devuelve el DTO con un 201, si no un 500.
+        if ($itemModel) {
+
+            // Obtiene el DTO del ítem creado
+            $itemDTO = $this->getItemDTOByModel($itemModel);
+
+            return response()->json([
+                'status' => 'Created',
+                'code' => 201,
+                'description' => 'Ítem guardado',
+                'data' => $itemDTO
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'Internal Server Error',
+                'code' => 500,
+                'description' => 'No se pudo guardar el ítem',
+                'data' => null
             ]);
         }
     }
 
     // Actualiza datos de un item existente. No tienen por que recibir todos los campos, solo los que cambian.
-    public function update(Request $request) {
+    public function update(int $id, Request $request) {
 
-        /*
-            Validación de los valores del payload.
+        $parametros = json_decode($request->getContent(), 1);
 
-            En primer lugar se valida el ID, que es el único valor requerido.
-            El resto de valores son opcionales
-
-            Se usan los mismos criterios que en el método de validación
-            desarrollado para la versión anterior de la API (chequearValores)
-
-        */
-
-        $conIdValidado = $request->validate([
+        // Validación: En primer lugar se valida el ID, único valor requerido
+        $validator = Validator::make($request->route()->parameters(), [
             'id' => ['required', 'exists:items']
         ]);
 
-        if($conIdValidado) {
-
-            $request['arrayConditions'] = array("M","NM","E","VG","G","P");
-
-            $validado = $request->validate([
-                'id' => ['required', 'exists:items'],
-                'title' => ['string'],
-                'artist' => ['string'], 
-                'format' => ['string'],
-                'year' => ['integer', 'gt:1900', 'lt:2156'],
-                'origYear' => ['integer', 'gt:1900', 'lt:2156'],
-                'label' => ['string'],
-                'rating' => ['gte:1', 'lte:10'], 
-                'comment' => ['string'], 
-                'buyPrice' => ['decimal:0,2', 'gte:0'],
-                'condition' => ['in_array:arrayConditions.*'],
-                'sellPrice' => ['decimal:0,2', 'gte:0'],
-                'externalIds' => ['array']
-            ]);
-
-            if($validado) {
-
-                // Recupera el modelo de la BD
-                $itemModel = Item::find($validado['id']);
-
-                // Aplica los cambios
-                foreach($validado as $propiedad => $valorActualizado) {
-                    // No se debe editar el ID, y externalIds no pertenece a esta entidad
-                    if($propiedad != 'id' && $propiedad != 'externalIds') {
-                        $propiedadMins = strtolower($propiedad);
-                        $itemModel->$propiedadMins = $valorActualizado;
-                    }
-                }
-
-                // Actualiza el modelo
-                $itemModel->save();
-
-                // En el caso de recibir externalIds, deben borrarse de la BD los que existan previamente
-                if(array_key_exists('externalIds', $validado)) {
-
-                    ExternalId::where('item_id', $validado['id'])->delete();
-
-                    // A continuación se insertan los que se hayan recibido del cliente
-                    foreach($validado['externalIds'] as $supplier => $value) {
-
-                        ExternalId::create(
-                            [
-                                'supplier' => $supplier,
-                                'value' => $value,
-                                'item_id' => $validado['id'],
-                            ]
-                        );
-                    }
-                }
-                
-
-                // Por último se crea el itemDTO con los datos actualizados y se devuelve
-                $itemDTOActualizado = $this->getItemDTOByModel($itemModel);
-
-                // Envía la respuesta
-                return response()->json([
-                    'status' => 'No Content',
-                    'code' => 204,
-                    'description' => 'Ítem actualizado',
-                    'data' => $itemDTOActualizado
-                ]);
-
-            // Alguno de los datos no ha validado
-            } else {
-                return response()->json([
-                    'status' => 'Bad Request',
-                    'code' => 400,
-                    'description' => 'No se pudo actualizar el ítem: los datos están mal formados',
-                    'data' => $request->getContent()
-                ]);
-            }
-
-        // No ha encontrado el item con ese ID
-        } else {
+        if ($validator->fails()) {
             return response()->json([
-                'status' => 'Bad Request',
+                'status' => 'Not Found',
                 'code' => 404,
-                'description' => 'No se pudo actualizar el ítem: no existe ese ID',
-                'data' => $request->getContent()
+                'description' => 'No existe un ítem con ese ID',
+                'data' => null
             ]);
         }
+
+        // Validación: A continuación se valida el resto de parámetros
+        $request['arrayConditions'] = array("M","NM","E","VG","G","P");
+        $validator = Validator::make($request->all(), [
+            'title' => ['string'],
+            'artist' => ['string'], 
+            'format' => ['string'],
+            'year' => ['integer', 'gt:1900', 'lt:2156'],
+            'origYear' => ['integer', 'gt:1900', 'lt:2156'],
+            'label' => ['string'],
+            'rating' => ['gte:1', 'lte:10'], 
+            'comment' => ['string'], 
+            'buyPrice' => ['decimal:0,2', 'gte:0'],
+            'condition' => ['in_array:arrayConditions.*'],
+            'sellPrice' => ['decimal:0,2', 'gte:0'],
+            'externalIds' => ['array']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'Bad Request',
+                'code' => 400,
+                'description' => 'No se pudo actualizar el ítem: los datos están mal formados',
+                'data' => $parametros
+            ]);
+        }
+
+        // Recupera el modelo de la BD
+        $itemModel = Item::find($id);
+
+        // Aplica los cambios
+        foreach($parametros as $propiedad => $valorActualizado) {
+            // No se debe editar el ID, y externalIds no pertenece a esta entidad
+            if($propiedad != 'id' && $propiedad != 'externalIds') {
+                $propiedadMins = strtolower($propiedad);
+                $itemModel->$propiedadMins = $valorActualizado;
+            }
+        }
+
+        // Actualiza el modelo
+        $itemModel->save();
+
+        // En el caso de recibir externalIds, deben borrarse de la BD los que existan previamente
+        if(array_key_exists('externalIds', $parametros)) {
+
+            ExternalId::where('item_id', $id)->delete();
+
+            // A continuación se insertan los que se hayan recibido del cliente
+            foreach($parametros['externalIds'] as $supplier => $value) {
+
+                ExternalId::create(
+                    [
+                        'supplier' => $supplier,
+                        'value' => $value,
+                        'item_id' => $id,
+                    ]
+                );
+            }
+        }
+        
+
+        // Por último se crea el itemDTO con los datos actualizados y se devuelve
+        $itemDTOActualizado = $this->getItemDTOByModel($itemModel);
+
+        // Envía la respuesta
+        return response()->json([
+            'status' => 'No Content',
+            'code' => 204,
+            'description' => 'Ítem actualizado',
+            'data' => $itemDTOActualizado
+        ]);
+
     }
 
 
     // Elimina un ítem a partir del ID recibido en el body de la petición
     public function delete(Request $request) {
 
-        $validado = $request->validate([
+        $parametros = json_decode($request->getContent(), 1);
+
+        // Validación: En primer lugar se valida el ID, que es el único valor requerido.
+        $validator = Validator::make($request->all(), [
             'id' => ['required', 'exists:items']
         ]);
 
-        // Si existe el ítem a eliminar, procede con la eliminación
-        if($validado['id']) {
-
-            // Primero obtiene el DTO para la respuesta
-            $itemDTOAEliminar = $this->getItemDTOByModel(Item::find($validado['id']));
-
-            // Los modelos ExternalId que pertenezcan a este Item se eliminarán también por ON DELETE CASCADE
-            $itemEliminado = Item::destroy($validado['id']);
-
-            // Envía las respuestas correspondientes
-            if ($itemEliminado) {
-                return response()->json([
-                    'status' => 'No Content',
-                    'code' => 204,
-                    'description' => 'Item eliminado',
-                    'data' => $itemDTOAEliminar
-                ]);
-            } else {
-                return response()->json([
-                    'status' => 'Internal Server Error',
-                    'code' => 500,
-                    'description' => 'No se pudo eliminar el ítem',
-                    'data' => null
-                ]);
-            }
-        
-        // Si el ítem no existía, devuelve un 404
-        } else {
+        if ($validator->fails()) {
             return response()->json([
                 'status' => 'Not Found',
                 'code' => 404,
                 'description' => 'No existe un ítem con ese ID',
+                'data' => null
+            ]);
+        }
+
+        // Antes de borrar el ítem, se crea con él un DTO para la respuesta
+        $itemModelAEliminar = Item::find($parametros['id']);
+        $itemDTOAEliminar = $this->getItemDTOByModel($itemModelAEliminar);
+
+        // Los modelos ExternalId que pertenezcan a este Item se eliminarán también por ON DELETE CASCADE
+        $itemEliminado = Item::destroy($parametros['id']);
+
+        // Envía las respuestas correspondientes
+        if ($itemEliminado) {
+            return response()->json([
+                'status' => 'No Content',
+                'code' => 204,
+                'description' => 'Item eliminado',
+                'data' => $itemDTOAEliminar
+            ]);
+        } else {
+            return response()->json([
+                'status' => 'Internal Server Error',
+                'code' => 500,
+                'description' => 'No se pudo eliminar el ítem',
                 'data' => null
             ]);
         }
