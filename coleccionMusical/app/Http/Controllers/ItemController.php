@@ -17,29 +17,16 @@ class ItemController extends Controller
     public function __construct() {}
 
 
-
-    // public function index() {
-
-    //     // Ya no necesitamos la utilidad ApiJsonResponse, Laravel tiene incorporada esta función
-    //     return response()->json([
-    //         'status' => 'OK',
-    //         'code' =>  200,
-    //         'description' => 'Hola, has llegado al indice de esta API, usa sus endpoints para obtener o modificar datos',
-    //         'data' => null
-    //     ]);
-    // }
-
     // Obtiene todos los ítems de la colección y los devuelve en una respuesta JSON
     public function getAll() {
 
-        $itemsCollection = DB::table('items')->get();
+        $itemModels = Item::all();
 
         $itemsDTO = [];
 
-        foreach($itemsCollection as $itemFila) {
+        foreach($itemModels as $itemModel) {
 
-            // Obtiene un itemDTO a partir del ID del objeto devuelto por el ORM
-            $itemDTO = $this->getItemDTOById($itemFila->id);
+            $itemDTO = $this->getItemDTOByModel($itemModel);
 
             $itemsDTO[] = $itemDTO;
         }
@@ -523,6 +510,37 @@ class ItemController extends Controller
 
         // Si no hay resultados, devuelve false
         } else return false;
+    }
+
+    // Mapea un modelo Item a un DTO
+    private function getItemDTOByModel(Item $itemModel): ItemDTO {
+
+        // Obtiene los modelos externalIds pertenecientes al ítem
+        $externalIdModels = Item::find($itemModel->id)->externalIds;
+
+        // Se extraen las columnas que nos interesan de ExternalId y se guardan en un array para añadirlo al DTO
+        $externalIdsArray = [];
+
+        foreach($externalIdModels as $externalId) {
+            $externalIdsArray[$externalId->supplier] = $externalId->value;
+        }
+
+        $itemDTO = new ItemDTO(
+            $itemModel->title,
+            $itemModel->artist,
+            $itemModel->format,
+            $itemModel->year,
+            $itemModel->origyear,
+            $itemModel->label,
+            $itemModel->rating,
+            $itemModel->comment,
+            $itemModel->buyprice,
+            $itemModel->condition,
+            $itemModel->sellprice,
+            $externalIdsArray
+        );
+
+        return $itemDTO;
     }
 
     // Obtiene la entidad del ítem a partir de su ID o false si no existe
