@@ -36,7 +36,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/1",
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/{{idget}}",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -47,7 +47,7 @@
 						"public",
 						"api",
 						"item",
-						"1"
+						"{{idget}}"
 					]
 				},
 				"description": "Esta solicitud GET obtiene un ítem específico basado en su ID.\n\n**Caso de uso:** Si se cambia el valor de `10` en la URL al ID del ítem que quieres consultar, debería devolver los detalles de ese ítem en concreto.\n\nEn caso de éxito devuelve el ítem correspondiente. En caso contrario devuelve el error generado."
@@ -177,7 +177,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/{{id}}",
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/{{idput}}",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -188,7 +188,7 @@
 						"public",
 						"api",
 						"item",
-						"{{id}}"
+						"{{idput}}"
 					]
 				},
 				"description": "Esta solicitud PUT actualiza un item en la base de datos basándose en su ID.\n\n**Caso de uso:** Si se cambia el valor de `id` al ID del ítem que se quiera actualizar, editando los nombres de las claves que queramos modificar (pueden ser todas o solo algunas) y sus valores en el cuerpo de la solicitud con los valores nuevos, se modificará el contenido de ese ítem.\n\n👁️ ¡OJO!\n\n- No se puede modificar el campo de ID, y el valor de este debe existir en la tabla\n- Los campos year y originalYear deben ser enteros entre 1901 y 2155\n- El campo rating debe ser un entero entre 1 y 10 (incluidos)\n- Los campos buyPrice y sellPrice deben ser numéricos mayores o iguales que cero\n- El campo condition debe contener un valor de la Goldmine Grading Guide (M, NM, E, VG, G, P)\n    \n\nEn caso de éxito devuelve el ítem actualizado. En caso no éxito devuelve el error generado."
@@ -230,8 +230,8 @@
 	],
 	"variable": [
 		{
-			"key": "id",
-			"value": "10",
+			"key": "idput",
+			"value": "14",
 			"type": "string"
 		},
 		{
@@ -252,6 +252,11 @@
 		{
 			"key": "order",
 			"value": "DESC",
+			"type": "string"
+		},
+		{
+			"key": "idget",
+			"value": "1",
 			"type": "string"
 		}
 	]

@@ -24,7 +24,7 @@ class ItemController extends Controller
         $itemModels = Item::all();
 
         // Devuelve la respuesta con un array de DTOs o un 404
-        if($itemModels) {
+        if(count($itemModels)>0) {
 
             $itemsDTO = [];
             foreach($itemModels as $itemModel) {
@@ -42,8 +42,8 @@ class ItemController extends Controller
             ]);
         } else {
             return response()->json([
-                'status' => 'Internal Server Error',
-                'code' => 500,
+                'status' => 'Not Found',
+                'code' => 404,
                 'description' => 'No hay ítems',
                 'data' => null
             ]);
@@ -75,7 +75,7 @@ class ItemController extends Controller
         return response()->json([
             'status' => 'OK',
             'code' => 200,
-            'description' => 'Ítem con ID ' . $id,
+            'description' => 'Ítem con el ID solicitado',
             'data' => $itemDTO
         ]);
     }
@@ -87,7 +87,7 @@ class ItemController extends Controller
         $itemModels = Item::where('artist', $artist)->get();
 
         // Si hay ocurrencias, se devuelven, en caso contrario un 404.
-        if($itemModels) {
+        if(count($itemModels)>0) {
 
             $itemsDTO = [];
             foreach($itemModels as $itemModel) {
@@ -118,7 +118,7 @@ class ItemController extends Controller
         $itemModels = Item::where('format', $format)->get();
 
         // Si hay ocurrencias, se devuelven, en caso contrario un 404.
-        if($itemModels) {
+        if(count($itemModels)>0) {
 
             $itemsDTO = [];
             foreach($itemModels as $itemModel) {
@@ -168,7 +168,7 @@ class ItemController extends Controller
         $itemModels = Item::orderBy($columna, $orden)->get();
 
         // Devuelve la respuesta con un array de DTOs o un 404
-        if($itemModels) {
+        if(count($itemModels)>0) {
 
             $itemsDTO = [];
             foreach($itemModels as $itemModel) {
@@ -327,11 +327,23 @@ class ItemController extends Controller
         $itemModel = Item::find($id);
 
         // Aplica los cambios
-        foreach($parametros as $propiedad => $valorActualizado) {
-            // No se debe editar el ID, y externalIds no pertenece a esta entidad
-            if($propiedad != 'id' && $propiedad != 'externalIds') {
-                $propiedadMins = strtolower($propiedad);
-                $itemModel->$propiedadMins = $valorActualizado;
+        foreach($parametros as $columna => $valorActualizado) {
+
+            // Si la columna no existe o no está permitida (ID), se saca un 400
+            $columnasValidas = array('title','artist','format','year','origYear','label','rating', 'comment','buyPrice', 'condition','sellPrice', 'externalIds');
+            if(!in_array($columna, $columnasValidas)) {
+                return response()->json([
+                    'status' => 'Bad Request',
+                    'code' => 400,
+                    'description' => 'No se pudo actualizar el ítem: los datos están mal formados',
+                    'data' => $parametros
+                ]);
+            }
+
+            // Los externalIds se actualizan en su propia tabla, no aquí
+            if($columna != 'externalIds') {
+                $columnaMins = strtolower($columna);
+                $itemModel->$columnaMins = $valorActualizado;
             }
         }
 

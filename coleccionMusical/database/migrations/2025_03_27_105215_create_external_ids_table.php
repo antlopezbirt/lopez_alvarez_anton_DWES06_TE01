@@ -55,7 +55,9 @@ return new class extends Migration
             ['supplier' => 'MusicBrainz', 'value' => 'de53b49d-be39-4daf-afe2-d650269862d7', 'item_id' => '10'],
             ['supplier' => 'Discogs', 'value' => '3374017', 'item_id' => '11'],
             ['supplier' => 'Discogs', 'value' => '17593621', 'item_id' => '12'],
-            ['supplier' => 'MusicBrainz', 'value' => 'f018af26-cf5e-4c76-93f0-c5faa80fd371', 'item_id' => '12']
+            ['supplier' => 'MusicBrainz', 'value' => 'f018af26-cf5e-4c76-93f0-c5faa80fd371', 'item_id' => '12'],
+            ['supplier' => 'Discogs', 'value' => '651058', 'item_id' => '13'],
+            ['supplier' => 'MusicBrainz', 'value' => '2defbea3-6f9d-43f1-bac7-fdd196cf65a7', 'item_id' => '13']
         ]);
 
 

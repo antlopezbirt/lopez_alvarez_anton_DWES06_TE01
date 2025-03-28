@@ -25,4 +25,8 @@ Por ello, se recomienda ejecutar las migraciones, que generarán dichas tablas c
 php artisan migrate
 ```
 
-Ahora sí se puede pasar a probar los endpoints con Postman.
+Ahora sí se puede pasar a probar los endpoints con Postman. Si por cualquier motivo se quiere empezar de nuevo:
+
+```bash
+php artisan migrate:refresh
+```
