@@ -1,0 +1,258 @@
+{
+	"info": {
+		"_postman_id": "946c78f4-4a82-4d78-94c6-1ca8606fc845",
+		"name": "DWES05_TE - Antón López Álvarez",
+		"description": "Este fichero contiene las consultas para llevar a cabo las operaciones CRUD definidas en la TE anterior, en una aplicación de gestión de una colección de discos, pero adaptadas al framework Laravel.\n\nOperaciones disponibles\n\n1. **Obtener todos los ítems**: Devolverá la lista completa con la información de cada disco.\n    \n2. **Consultar un ítem por su ID**: Devolverá la información del ítem solicitado.\n    \n3. **Obtener ítems de un artista**: Recibirás todos los ítems de un artista concreto.\n    \n4. **Obtener ítems de un formato**: Devolverá todos los ítems que se correspondan con el formato enviado.\n    \n5. **Ordenar ítems**: Devolverá todos los ítems ordenados por la columna dada, y en el orden solicitado (ascendente o descendente).\n    \n6. **Crear un nuevo ítem**: Añadirá un nuevo ítem a la colección.\n    \n7. **Modificar un ítem existente**: Actualiza los datos recibidos en el item correspondiente.\n    \n8. **Eliminar un ítem**: Elimina un post de la colección.\n    \n\nCada operación de esta plantilla cuenta con instrucciones detalladas para enviar las peticiones.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39905534"
+	},
+	"item": [
+		{
+			"name": "1: Obtener todos los Ítems",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"lopez_alvarez_anton_DWES05_TE01",
+						"coleccionMusical",
+						"public",
+						"api",
+						"item"
+					]
+				},
+				"description": "Esta solicitud GET obtiene una lista de todos los ítems de la colección musical.\n\n**Caso de uso:** Al pulsar enviar debería devolver la información de todos los ítems de la colección.\n\nEn caso de éxito devuelve el listado completo de ítems. En caso contrario devuelve el error generado."
+			},
+			"response": []
+		},
+		{
+			"name": "2: Obtener un ítem por ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"lopez_alvarez_anton_DWES05_TE01",
+						"coleccionMusical",
+						"public",
+						"api",
+						"item",
+						"1"
+					]
+				},
+				"description": "Esta solicitud GET obtiene un ítem específico basado en su ID.\n\n**Caso de uso:** Si se cambia el valor de `10` en la URL al ID del ítem que quieres consultar, debería devolver los detalles de ese ítem en concreto.\n\nEn caso de éxito devuelve el ítem correspondiente. En caso contrario devuelve el error generado."
+			},
+			"response": []
+		},
+		{
+			"name": "3: Obtener los ítems de un Artista",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/artist/{{artist}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"lopez_alvarez_anton_DWES05_TE01",
+						"coleccionMusical",
+						"public",
+						"api",
+						"item",
+						"artist",
+						"{{artist}}"
+					]
+				},
+				"description": "Esta solicitud GET obtiene todos los ítem de un artista específico basado en su nombre.\n\n**Caso de uso:** Si se cambia el valor de `the-who` en la URL por el nombre del artista que queramos buscar, devolverá todos los ítems que estén a nombre de ese artista. Puedes usar minúsculas y mayúsculas indistintamente, es _case insensitive_.\n\n👁️ **¡OJO!** Muchos nombres de artistas contienen espacios, para poder consultarlos tendrás que sustituir esos espacios por guiones. Ejemplo: si quieres buscar a _The Who_, puedes escribir _The-Who_, _the-who_, etc.\n\nEn caso de éxito devuelve el listado de ítems correspondiente. En caso no éxito devuelve el error generado."
+			},
+			"response": []
+		},
+		{
+			"name": "4: Obtener los ítems de un Formato",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/format/{{format}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"lopez_alvarez_anton_DWES05_TE01",
+						"coleccionMusical",
+						"public",
+						"api",
+						"item",
+						"format",
+						"{{format}}"
+					]
+				},
+				"description": "Esta solicitud GET obtiene todos los ítem que están en un formato determinado, a partir del nombre de dicho formato.\n\n**Caso de uso:** Si se cambia el valor de `CD` en la URL por el nombre del formato que queramos buscar, devolverá todos los ítems que estén en ese formato. También es _case insensitive_.\n\nEn caso de éxito devuelve el listado de ítems correspondiente. En caso no éxito devuelve el error generado."
+			},
+			"response": []
+		},
+		{
+			"name": "5: Obtener todos los ítems ordenados",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/order/{{key}}/{{order}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"lopez_alvarez_anton_DWES05_TE01",
+						"coleccionMusical",
+						"public",
+						"api",
+						"item",
+						"order",
+						"{{key}}",
+						"{{order}}"
+					]
+				},
+				"description": "Esta solicitud GET obtiene todos los ítem ordenados por una clave dada. Este orden que puede ser ascendente o descendente.\n\n**Caso de uso:** Pon el nombre de una de las columnas de la tabla ítems en lugar de `{{key}}` y _asc_ o _desc_ en lugar de `{{order}}`. La aplicación devolverá todos los ítems ordenados según ese criterio.\n\n👁️ ¡OJO! Las claves son _case sensitive_. El orden (`asc` o `desc`) es _case insensitive_.\n\nEn caso de éxito devuelve todos los ítems. En caso no éxito devuelve el error generado.\n\nLista de las columnas disponibles para ordenar es: `id`, `title`, `artist`, `format`, `year`, `origYear`, `label`, `rating`, `comment`, `buyPrice`, `condition`, `sellPrice`.\n\n👁️ ¡OJO! Ten en cuenta que no se puede ordenar por la clave `externalIds`, ya que es un array."
+			},
+			"response": []
+		},
+		{
+			"name": "6: Crear un nuevo ítem",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\":\"Through the Looking Glass\",\n  \"artist\":\"Midori Takada\",\n  \"format\":\"CD\",\n  \"year\": 2017,\n  \"origYear\": 1983,\n  \"label\":\"WRWTFWW Records\",\n  \"rating\": 9,\n  \"comment\":\"Reedición suiza con descarga digital. Muy bueno.\",\n  \"buyPrice\": 20,\n  \"condition\":\"NM\",\n  \"sellPrice\": 28,\n  \"externalIds\":{\n    \"Discogs\":\"9975883\",\n    \"Musicbrainz\":\"76dccf5b-c8b0-44b1-93a8-fb739a066bc4\"\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"lopez_alvarez_anton_DWES05_TE01",
+						"coleccionMusical",
+						"public",
+						"api",
+						"item"
+					]
+				},
+				"description": "Esta solicitud POST crea un nuevo ítem en la colección musical.\n\n**Caso de uso:** En el cuerpo de la solicitud se incluirá un JSON con todos los campos del ítem a crear, a excepción del ID, que lo generará la base de datos: `title`, `artist`, `format`, `year`, `origYear`, `label`, `rating`, `comment`, `buyPrice`, `condition`, `sellPrice`, `externalIds`.\n\n👁️ ¡OJO! Para que se validen los datos se debe cumplir lo siguiente\n\n- Los campos year y originalYear deben estar entre 1901 y 2155 (tipo YEAR(4))\n    \n- El campo rating debe ser un entero entre 1 y 10 (incluidos)\n- Los campos buyPrice y sellPrice son numeros mayores o iguales que cero\n- El campo condition debe contener un valor de la Goldmine Grading Guide (M, NM, E, VG, G, P)\n    \n\nEn caso de éxito devuelve el ítem creado. En caso no éxito devuelve el error generado."
+			},
+			"response": []
+		},
+		{
+			"name": "7: Modificar un ítem",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"format\": \"3CD\",\n    \"year\": 2019,\n    \"origYear\": 1982,\n    \"externalIds\": {\n        \"Discogs\": \"25\",\n        \"Musicbrainz\": \"50\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item/{{id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"lopez_alvarez_anton_DWES05_TE01",
+						"coleccionMusical",
+						"public",
+						"api",
+						"item",
+						"{{id}}"
+					]
+				},
+				"description": "Esta solicitud PUT actualiza un item en la base de datos basándose en su ID.\n\n**Caso de uso:** Si se cambia el valor de `id` al ID del ítem que se quiera actualizar, editando los nombres de las claves que queramos modificar (pueden ser todas o solo algunas) y sus valores en el cuerpo de la solicitud con los valores nuevos, se modificará el contenido de ese ítem.\n\n👁️ ¡OJO!\n\n- No se puede modificar el campo de ID, y el valor de este debe existir en la tabla\n- Los campos year y originalYear deben ser enteros entre 1901 y 2155\n- El campo rating debe ser un entero entre 1 y 10 (incluidos)\n- Los campos buyPrice y sellPrice deben ser numéricos mayores o iguales que cero\n- El campo condition debe contener un valor de la Goldmine Grading Guide (M, NM, E, VG, G, P)\n    \n\nEn caso de éxito devuelve el ítem actualizado. En caso no éxito devuelve el error generado."
+			},
+			"response": []
+		},
+		{
+			"name": "8: Eliminar un ítem por su ID",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": 14\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost/lopez_alvarez_anton_DWES05_TE01/coleccionMusical/public/api/item",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"path": [
+						"lopez_alvarez_anton_DWES05_TE01",
+						"coleccionMusical",
+						"public",
+						"api",
+						"item"
+					]
+				},
+				"description": "Esta solicitud DELETE elimina un ítem de la colección a partir de su ID.\n\n**Caso de uso:** Si se cambia el valor de `id` al ID del ítem que se quiera eliminar, este se eliminaría de la colección al recibir y procesar la solicitud.\n\nEn caso de éxito devuelve el ítem eliminado. En caso no éxito devuelve el error generado."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "id",
+			"value": "10",
+			"type": "string"
+		},
+		{
+			"key": "artist",
+			"value": "the-who",
+			"type": "string"
+		},
+		{
+			"key": "format",
+			"value": "CD",
+			"type": "string"
+		},
+		{
+			"key": "key",
+			"value": "buyPrice",
+			"type": "string"
+		},
+		{
+			"key": "order",
+			"value": "DESC",
+			"type": "string"
+		}
+	]
+}
