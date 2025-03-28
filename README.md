@@ -2,13 +2,11 @@
 
 **Acciones iniciales**
 
-GitHub añade un sufijo "-main" al nombre del directorio al descargarlo como ZIP. Se recomienda eliminar ese sufijo y sacar el directorio lopez_alvarez_anton_DWES05_TE01 de otro de igual nombre que el extractor puede generar, de modo que la ruta del directorio en el disco (en Windows) quede así, para facilitar las pruebas con la colección de Postman que se incluye:
+GitHub añade un sufijo "-main" al nombre del directorio al descargarlo como ZIP. Se recomienda eliminar ese sufijo y sacar el directorio lopez_alvarez_anton_DWES05_TE01 de otro de igual nombre que el extractor puede generar, de modo que la ruta hasta el proyecto Laravel en el disco (en Windows) quede así, para facilitar las pruebas con la colección de Postman que se incluye:
 
 ```bash
-C:\{ruta hasta htdocs}\lopez_alvarez_anton_DWES05_TE01
+C:\{ruta hasta htdocs}\lopez_alvarez_anton_DWES05_TE01\coleccionMusical
 ```
-
-Dentro de ese directorio estará el del proyecto: ```coleccionMusical```
 
 Se han incluido en el repositorio las dependencias de ```vendor``` y el fichero de entorno ```.env```, comentando algunas líneas en gitignore. No obstante se recomienda antes de nada ejecutar Composer:
 
