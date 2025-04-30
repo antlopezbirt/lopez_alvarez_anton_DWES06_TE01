@@ -1,8 +1,8 @@
-## DWES05 TE01: Pasando de PHP nativo a Laravel
+## DWES06 TE01: Laravel + Microservicio Java con Spring Boot
 
 ### Acciones iniciales
 
-GitHub añade un sufijo "-main" al nombre del directorio al descargarlo como ZIP. Se recomienda eliminar ese sufijo y sacar el directorio lopez_alvarez_anton_DWES05_TE01 de otro de igual nombre que el extractor puede generar, de modo que la ruta hasta el proyecto Laravel en el disco (en Windows) quede así, para facilitar las pruebas con la colección de Postman que se incluye:
+GitHub añade un sufijo "-main" al nombre del directorio al descargarlo como ZIP. Se recomienda eliminar ese sufijo y sacar el directorio lopez_alvarez_anton_DWES06_TE01 de otro de igual nombre que el extractor puede generar, de modo que la ruta hasta el proyecto Laravel en el disco (en Windows) quede así, para facilitar las pruebas con la colección de Postman que se incluye:
 
 ```bash
 C:\{ruta hasta htdocs}\lopez_alvarez_anton_DWES05_TE01\coleccionMusical
