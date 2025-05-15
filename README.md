@@ -2,10 +2,10 @@
 
 ### Acciones iniciales
 
-GitHub añade un sufijo "-main" al nombre del directorio al descargarlo como ZIP. Se recomienda eliminar ese sufijo y sacar el directorio lopez_alvarez_anton_DWES06_TE01 de otro de igual nombre que el extractor puede generar, de modo que la ruta hasta el proyecto Laravel en el disco (en Windows) quede así, para facilitar las pruebas con la colección de Postman que se incluye:
+GitHub añade un sufijo "-main" al nombre del directorio al descargarlo como ZIP. Se recomienda eliminar ese sufijo y sacar el directorio lopez_alvarez_anton_DWES06_TE01 de otro de igual nombre que el extractor puede generar, de modo que la ruta hasta el proyecto en el disco (en Windows) quede así, para facilitar las pruebas con la colección de Postman que se incluye:
 
 ```bash
-C:\{ruta hasta htdocs}\lopez_alvarez_anton_DWES05_TE01\coleccionMusical
+C:\{ruta hasta htdocs}\lopez_alvarez_anton_DWES06_TE01\
 ```
 
 Se han incluido en el repositorio las dependencias de ```vendor``` y el fichero de entorno ```.env```, comentando algunas líneas en gitignore. No obstante se recomienda antes de nada ejecutar Composer por si acaso:
@@ -15,9 +15,11 @@ cd coleccionMusical
 composer install
 ```
 
-### Datos incluidos
+### Datos incluidos: Laravel y Spring Boot
 
-Se han incluido los datos iniciales dentro de las migraciones. De este modo se puede probar la aplicación con el mismo conjunto de datos que en el vídeo de autoevaluación sin necesidad de ejecutar ningún script SQL.
+Para Laravel se han incluido los datos iniciales dentro de las migraciones.
+
+Para Spring Boot se ha generado un script SQL que se deberá ejecutar para crear la base de datos dedicada a él con los datos correspondientes.
 
 Por ello, se recomienda ejecutar las migraciones, que generarán dichas tablas con sus datos:
 
@@ -25,8 +27,6 @@ Por ello, se recomienda ejecutar las migraciones, que generarán dichas tablas c
 php artisan migrate
 ```
 
-Ahora sí se puede pasar a probar los endpoints con Postman. Si por cualquier motivo se quiere empezar de nuevo:
+Y posteriormente importar y ejecutar en el gestor de bases de datos el script SQL de Spring Boot.
 
-```bash
-php artisan migrate:refresh
-```
+En este punto se puede pasar a probar los endpoints en Postman.
