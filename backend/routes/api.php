@@ -2,11 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
+use Illuminate\Support\Facades\Http;
 
 
 /*
@@ -27,6 +23,9 @@ use Illuminate\Support\Facades\Route;
     En caso de que no se valide la ruta por este u otro motivo, se llega a la
     ruta de fallback, que devuelve un 404.
 */
+
+
+// SERVICIO PRINCIPAL: Colección musical
 
 Route::controller('App\Http\Controllers\ItemController')->prefix('item')->group(function() {
 
@@ -52,3 +51,69 @@ Route::controller('App\Http\Controllers\ItemController')->prefix('item')->group(
         ]);
     });
 });
+
+
+
+// MICROSERVICIO Java con Spring Boot: Usuarios 
+
+// READ (GetAll)
+Route::get('/user', function() {
+    $res = Http::get('http://localhost:8080/user/');
+    // return response()->json([
+    //     'status' => $res->headers()['status'][0],
+    //     'code' => $res->headers()['code'][0],
+    //     'description' => $res->headers()['description'][0],
+    //     'data' => json_decode($res->body())
+    // ]);
+
+    return response()->json(json_decode($res->body()));
+
+})->name('usuarioGetAll');
+
+// READ (GetById)
+Route::get('/user/{id}', function() {
+    $endpoint = 'http://localhost:8080/user/' . Route::current()->parameter('id');
+
+    $res = Http::get($endpoint);
+     
+    return response()->json([
+        'status' => $res->headers()['status'][0],
+        'code' => $res->headers()['code'][0],
+        'description' => $res->headers()['description'][0],
+        'data' => json_decode($res->body())
+    ]);
+})->whereNumber('id')->name('usuarioGetById');
+
+// POST
+Route::post('/user', function(Request $request) {
+    $res = Http::withBody($request->getContent())->post('http://localhost:8080/user/');
+    return response()->json([
+        'status' => $res->headers()['status'][0],
+        'code' => $res->headers()['code'][0],
+        'description' => $res->headers()['description'][0],
+        'data' => json_decode($res->body())
+    ]);
+})->name('usuarioCreate');
+
+// PUT
+Route::put('/user', function(Request $request) {
+    $res = Http::withBody($request->getContent())->put('http://localhost:8080/user/');
+    return response()->json([
+        'status' => $res->headers()['status'][0],
+        'code' => $res->headers()['code'][0],
+        'description' => $res->headers()['description'][0],
+        'data' => json_decode($res->body())
+    ]);
+})->name('usuarioCreate');
+
+// DELETE
+Route::delete('/user', function(Request $request) {
+    $endpoint = 'http://localhost:8080/user/' . $request->all()['id'];
+    $res = Http::delete($endpoint);
+    return response()->json([
+        'status' => $res->headers()['status'][0],
+        'code' => $res->headers()['code'][0],
+        'description' => $res->headers()['description'][0],
+        'data' => json_decode($res->body())
+    ]);
+})->whereNumber('id')->name('usuarioDelete');
