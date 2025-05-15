@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\Client\ConnectionException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 
@@ -33,6 +34,16 @@ return Application::configure(basePath: dirname(__DIR__))
                 'status' => 'Not Found',
                 'code' => 404,
                 'description' => 'No existe la ruta: ' . $request->path(),
+                'data' => null
+            ]);
+        });
+
+        // Personaliza la respuesta para la excepción de fallo de conexión del HTTP Client
+        $exceptions->render(function (ConnectionException $e, Request $request) {
+            return response()->json([
+                'status' => 'Error',
+                'code' => 500,
+                'description' => 'Ha habido un error de conexión',
                 'data' => null
             ]);
         });

@@ -36,7 +36,7 @@ Route::controller('App\Http\Controllers\ItemController')->prefix('item')->group(
     Route::get('/format/{format}', 'getByFormat')->where('format', '^[a-zA-Z0-9\-]+$')->name('itemGetByFormat');
     Route::get('/order/{key}/{order}', 'sortByKey')->where('key', '^[a-zA-Z]+$')->where('order', '^[a-zA-Z]+$')->name('itemSortByKey');
     
-    // POST
+    // POST PUT DELETE
     Route::post('/', 'create')->name('itemCreate');
     Route::put('/{id}', 'update')->name('itemUpdate');
     Route::delete('/', 'delete')->name('itemDelete');
@@ -58,52 +58,28 @@ Route::controller('App\Http\Controllers\ItemController')->prefix('item')->group(
 
 // READ (GetAll)
 Route::get('/user', function() {
-    $res = Http::get('http://localhost:8080/user/');
-    // return response()->json([
-    //     'status' => $res->headers()['status'][0],
-    //     'code' => $res->headers()['code'][0],
-    //     'description' => $res->headers()['description'][0],
-    //     'data' => json_decode($res->body())
-    // ]);
-
+    $res = Http::get('http://localhosssssssssssssssssssssssssssssssssst:8080/user/');
+    if(!$res->successful()) respuestaErrorMicroservicio();
     return response()->json(json_decode($res->body()));
-
 })->name('usuarioGetAll');
 
 // READ (GetById)
 Route::get('/user/{id}', function() {
     $endpoint = 'http://localhost:8080/user/' . Route::current()->parameter('id');
-
     $res = Http::get($endpoint);
-     
-    return response()->json([
-        'status' => $res->headers()['status'][0],
-        'code' => $res->headers()['code'][0],
-        'description' => $res->headers()['description'][0],
-        'data' => json_decode($res->body())
-    ]);
+    return response()->json(json_decode($res->body()));
 })->whereNumber('id')->name('usuarioGetById');
 
 // POST
 Route::post('/user', function(Request $request) {
     $res = Http::withBody($request->getContent())->post('http://localhost:8080/user/');
-    return response()->json([
-        'status' => $res->headers()['status'][0],
-        'code' => $res->headers()['code'][0],
-        'description' => $res->headers()['description'][0],
-        'data' => json_decode($res->body())
-    ]);
+    return response()->json(json_decode($res->body()));
 })->name('usuarioCreate');
 
 // PUT
 Route::put('/user', function(Request $request) {
     $res = Http::withBody($request->getContent())->put('http://localhost:8080/user/');
-    return response()->json([
-        'status' => $res->headers()['status'][0],
-        'code' => $res->headers()['code'][0],
-        'description' => $res->headers()['description'][0],
-        'data' => json_decode($res->body())
-    ]);
+    return response()->json(json_decode($res->body()));
 })->name('usuarioCreate');
 
 // DELETE
@@ -117,3 +93,22 @@ Route::delete('/user', function(Request $request) {
         'data' => json_decode($res->body())
     ]);
 })->whereNumber('id')->name('usuarioDelete');
+
+function respuestaErrorConexion() {
+    response()->json([
+        'status' => 'Server Error',
+        'code' => 500,
+        'description' => 'Ha habido un error de conexión al microservicio',
+        'data' => null
+    ]);
+}
+
+
+function respuestaErrorMicroservicio() {
+    response()->json([
+        'status' => 'Server Error',
+        'code' => 500,
+        'description' => 'Ha habido un error en la respuesta del microservicio',
+        'data' => null
+    ]);
+}
