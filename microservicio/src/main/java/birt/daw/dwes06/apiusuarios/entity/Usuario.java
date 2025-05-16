@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -32,10 +33,11 @@ public class Usuario {
 	@Column
 	@Getter @Setter private String nombre;
 	
-	@NotBlank(message = "La extensión no puede estar vacía")
-	@Size(min = 1, max = 50, message = "La extensión debe tener como mínimo 1 carácter y como máximo 50")
+	@NotBlank(message = "El correo electrónico no puede estar vacío")
+	@Email(message = "Se debe introducir un correo válido")
+	@Size(max = 50, message = "El correo introducido puede tener como máximo 50 caracteres")
 	@Column
-	@Getter @Setter private String extension;
+	@Getter @Setter private String correo;
 	
 	@NotBlank(message = "La especialidad no puede estar vacía")
 	@Size(min = 1, max = 50, message = "La especialidad debe tener como mínimo 1 carácter y como máximo 50")
