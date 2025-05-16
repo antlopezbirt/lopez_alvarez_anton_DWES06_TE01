@@ -20,14 +20,16 @@ composer install
 Al igual que en la unidad anterior, para Laravel se han incluido los datos iniciales dentro de las migraciones.
 
 ```bash
+cd backend
 php artisan migrate
 ```
 
 Para Spring Boot se ha generado el script SQL `coleccionmusical_usuarios.sql`, ubicado en la raíz del repositorio, que se deberá ejecutar en el servidor MySQL para crear la base de datos correspondiente con los datos de prueba.
 
-A continuación levantamos el microservicio desde la consola con
+A continuación nos dirigimos al directorio del microservicio y lo levantamos con:
 
 ```bash
+cd ../microservicio
 ./mvnw spring-boot:run
 ```
 
