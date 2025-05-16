@@ -11,7 +11,7 @@ C:\{ruta hasta htdocs}\lopez_alvarez_anton_DWES06_TE01\
 Se han incluido en el repositorio las dependencias de ```vendor``` y el fichero de entorno ```.env```, comentando algunas líneas en gitignore. No obstante se recomienda antes de nada ejecutar Composer por si acaso:
 
 ```bash
-cd coleccionMusical
+cd backend
 composer install
 ```
 
@@ -20,7 +20,6 @@ composer install
 Al igual que en la unidad anterior, para Laravel se han incluido los datos iniciales dentro de las migraciones.
 
 ```bash
-cd backend
 php artisan migrate
 ```
 
