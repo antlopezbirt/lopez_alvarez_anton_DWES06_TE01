@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class Respuesta {
+public class RespuestaApi {
 	private String status;
 	private int code;
 	private String description;

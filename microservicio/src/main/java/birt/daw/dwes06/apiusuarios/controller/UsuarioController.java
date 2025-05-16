@@ -18,94 +18,129 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.modelmapper.ModelMapper;
 
+import birt.daw.dwes06.apiusuarios.dto.UsuarioDTO;
 import birt.daw.dwes06.apiusuarios.entity.*;
 import birt.daw.dwes06.apiusuarios.servicio.*;
-import birt.daw.dwes06.apiusuarios.util.Respuesta;
+import birt.daw.dwes06.apiusuarios.util.RespuestaApi;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/user")
 public class UsuarioController {
 	
+//	@Autowired
+//	private UsuarioServicio usuarioServicio;
+	
 	@Autowired
+	private ModelMapper modelMapper;
+	
 	private UsuarioServicio usuarioServicio;
+
+	public UsuarioController(UsuarioServicio usuarioServicio) {
+		super();
+		this.usuarioServicio = usuarioServicio;
+	}
 	
 	@GetMapping("/")
-	public ResponseEntity<Respuesta> getAll() {
+	public ResponseEntity<RespuestaApi> getAll() {
 		List<Usuario> usuarios = null;
 		
 		try {
 			
-			usuarios = usuarioServicio.getAll();
+			// Obtenemos las entidades
+			
+			usuarios = this.usuarioServicio.getAll();
+			
+			// Mapeamos el listado de entidades a un listado de DTOs
+			
+			List<UsuarioDTO> usuariosRespuesta = new ArrayList<UsuarioDTO>();
+			
+			for(Usuario usuario : usuarios) {
+				UsuarioDTO usuarioRespuesta = modelMapper.map(usuario, UsuarioDTO.class);
+				usuariosRespuesta.add(usuarioRespuesta);
+			}
+			
+			// Enviamos la respuesta, según el caso.
+			
 			if (usuarios.isEmpty()) {
-				Respuesta respuesta = new Respuesta("Not Found", 404, "No hay usuarios", null);
+				RespuestaApi respuesta = new RespuestaApi("Not Found", 404, "No hay usuarios", null);
 				return ResponseEntity.ok()
 					.body(respuesta);
 			} else {
-				Respuesta respuesta = new Respuesta("OK", 200, "Todos los usuarios", usuarios);
+				RespuestaApi respuesta = new RespuestaApi("OK", 200, "Todos los usuarios", usuariosRespuesta);
 				return ResponseEntity.ok()
 					.body(respuesta);
 			}
 			
 		} catch (Exception e) {
 			
-			Respuesta respuesta = new Respuesta("Server Error", 500, "Se produjo un error en el servidor al recuperar los usuarios", null);
+			RespuestaApi respuesta = new RespuestaApi("Server Error", 500, "Se produjo un error en el servidor al recuperar los usuarios", null);
 			return ResponseEntity.ok()
 				.body(respuesta);
 		}
 	}
 	
 	@GetMapping("/{idUsuario}")
-	public ResponseEntity<Respuesta> getUsuarioById(@PathVariable int idUsuario) {
+	public ResponseEntity<RespuestaApi> getUsuarioById(@PathVariable int idUsuario) {
 		
 		Usuario usuario;
 		
 		try {
-			usuario = usuarioServicio.getById(idUsuario);
+			usuario = this.usuarioServicio.getById(idUsuario);
+			
+			// Mapeamos la entidad a DTO y enviamos la respuesta correspondiente, que siempre tiene formato de lista.
+			
+			UsuarioDTO usuarioRespuesta = modelMapper.map(usuario, UsuarioDTO.class);
 			
 			if (usuario == null) {
-				Respuesta respuesta = new Respuesta("Not Found", 404, "No existe el usuario solicitado", null);
+				RespuestaApi respuesta = new RespuestaApi("Not Found", 404, "No existe el usuario solicitado", null);
 				return ResponseEntity.ok()
 					.body(respuesta);
 			}
 			
-			List<Usuario> usuarios = new ArrayList<Usuario>();
-			usuarios.add(usuario);
+			List<UsuarioDTO> usuarios = new ArrayList<UsuarioDTO>();
+			usuarios.add(usuarioRespuesta);
 			
-			Respuesta respuesta = new Respuesta("OK", 200, "Usuario solicitado", usuarios);
+			RespuestaApi respuesta = new RespuestaApi("OK", 200, "Usuario solicitado", usuarios);
 			return ResponseEntity.ok()
 				.body(respuesta);
 		} catch (Exception e) {
-			Respuesta respuesta = new Respuesta("Server Error", 500, "Se produjo un error en el servidor al recuperar el usuario", null);
+			RespuestaApi respuesta = new RespuestaApi("Server Error", 500, "Se produjo un error en el servidor al recuperar el usuario", null);
 			return ResponseEntity.ok()
 				.body(respuesta);
 		} 
 	}
 	
 	@PostMapping("/")
-	public ResponseEntity<Respuesta> create(@Valid @RequestBody Usuario usuario) {
+	public ResponseEntity<RespuestaApi> create(@Valid @RequestBody Usuario usuario) {
 		usuario.setId(0);
 		
 		try {
 			usuarioServicio.create(usuario);
-			List<Usuario> usuarios = new ArrayList<Usuario>();
-			usuarios.add(usuario);
 			
-			Respuesta respuesta = new Respuesta("No Content", 204, "Usuario creado", usuarios);
+			// Mapeamos la entidad a DTO y enviamos la respuesta correspondiente, que siempre tiene formato de lista.
+			
+			UsuarioDTO usuarioRespuesta = modelMapper.map(usuario, UsuarioDTO.class);
+			
+			List<UsuarioDTO> usuarios = new ArrayList<UsuarioDTO>();
+			usuarios.add(usuarioRespuesta);
+			
+			RespuestaApi respuesta = new RespuestaApi("No Content", 204, "Usuario creado", usuarios);
 			return ResponseEntity.ok()
 				.body(respuesta);
 
 		} catch(Exception e) {
 			
-			Respuesta respuesta = new Respuesta("Server Error", 500, "Se produjo un error en el servidor al crear el usuario", null);
+			RespuestaApi respuesta = new RespuestaApi("Server Error", 500, "Se produjo un error en el servidor al crear el usuario", null);
 			return ResponseEntity.ok()
 				.body(respuesta);
 		}
 	}
 	
 	@PutMapping("/")
-	public ResponseEntity<Respuesta> update(@Valid @RequestBody Usuario usuario) {
+	public ResponseEntity<RespuestaApi> update(@Valid @RequestBody Usuario usuario) {
 		
 		Usuario usuarioEditar = null;
 
@@ -113,28 +148,33 @@ public class UsuarioController {
 			usuarioEditar = usuarioServicio.getById(usuario.getId());
 			
 			if (usuarioEditar == null) {
-				Respuesta respuesta = new Respuesta("Not Found", 404, "No existe el usuario a actualizar", null);
+				RespuestaApi respuesta = new RespuestaApi("Not Found", 404, "No existe el usuario a actualizar", null);
 				return ResponseEntity.ok()
 					.body(respuesta);
 			}
 			
 			usuarioServicio.update(usuario);
-			List<Usuario> usuarios = new ArrayList<Usuario>();
-			usuarios.add(usuario);
 			
-			Respuesta respuesta = new Respuesta("No Content", 204, "Usuario actualizado", usuarios);
+			// Mapeamos la entidad a DTO y enviamos la respuesta correspondiente, que siempre tiene formato de lista.
+			
+			UsuarioDTO usuarioRespuesta = modelMapper.map(usuario, UsuarioDTO.class);
+			
+			List<UsuarioDTO> usuarios = new ArrayList<UsuarioDTO>();
+			usuarios.add(usuarioRespuesta);
+			
+			RespuestaApi respuesta = new RespuestaApi("No Content", 204, "Usuario actualizado", usuarios);
 			return ResponseEntity.ok()
 				.body(respuesta);
 
 		} catch(Exception e) {
-			Respuesta respuesta = new Respuesta("Server Error", 500, "Se produjo un error en el servidor al actualizar el usuario", null);
+			RespuestaApi respuesta = new RespuestaApi("Server Error", 500, "Se produjo un error en el servidor al actualizar el usuario", null);
 			return ResponseEntity.ok()
 				.body(respuesta);
 		}
 	}
 	
 	@DeleteMapping("/{idUsuario}")
-	public ResponseEntity<Respuesta> delete(@PathVariable int idUsuario) {
+	public ResponseEntity<RespuestaApi> delete(@PathVariable int idUsuario) {
 		
 		Usuario usuarioEliminar = null;
 
@@ -142,22 +182,26 @@ public class UsuarioController {
 			usuarioEliminar = usuarioServicio.getById(idUsuario);
 			
 			if (usuarioEliminar == null) {
-				Respuesta respuesta = new Respuesta("Not Found", 404, "No existe el usuario a eliminar", null);
+				RespuestaApi respuesta = new RespuestaApi("Not Found", 404, "No existe el usuario a eliminar", null);
 				return ResponseEntity.ok()
 					.body(respuesta);
 			}
 			
 			usuarioServicio.deleteById(idUsuario);
 			
-			List<Usuario> usuarios = new ArrayList<Usuario>();
-			usuarios.add(usuarioEliminar);
+			// Mapeamos la entidad a DTO y enviamos la respuesta correspondiente, que siempre tiene formato de lista.
 			
-			Respuesta respuesta = new Respuesta("No Content", 204, "Usuario eliminado", usuarios);
+			UsuarioDTO usuarioRespuesta = modelMapper.map(usuarioEliminar, UsuarioDTO.class);
+			
+			List<UsuarioDTO> usuarios = new ArrayList<UsuarioDTO>();
+			usuarios.add(usuarioRespuesta);
+			
+			RespuestaApi respuesta = new RespuestaApi("No Content", 204, "Usuario eliminado", usuarios);
 			return ResponseEntity.ok()
 				.body(respuesta);
 
 		} catch(Exception e) {
-			Respuesta respuesta = new Respuesta("Server Error", 500, "Se produjo un error en el servidor al eliminar el usuario", null);
+			RespuestaApi respuesta = new RespuestaApi("Server Error", 500, "Se produjo un error en el servidor al eliminar el usuario", null);
 			return ResponseEntity.ok()
 				.body(respuesta);
 		}
@@ -168,7 +212,7 @@ public class UsuarioController {
 	// Método para manejar las excepciones de validación de los objetos Usuario recibidos
 	
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	private ResponseEntity<Respuesta> handleValidationExceptions(
+	private ResponseEntity<RespuestaApi> handleValidationExceptions(
 	  MethodArgumentNotValidException ex) {
 	    Map<String, String> errors = new HashMap<>();
 	    ex.getBindingResult().getAllErrors().forEach((error) -> {
@@ -180,7 +224,7 @@ public class UsuarioController {
 	    List<Map<String, String>> errores = new ArrayList<Map<String, String>>();
 	    errores.add(errors);
 	    
-	    Respuesta respuesta = new Respuesta("Bad Request", 400, "Datos de entrada mal formados", errores);
+	    RespuestaApi respuesta = new RespuestaApi("Bad Request", 400, "Datos de entrada mal formados", errores);
 		return ResponseEntity.ok()
 			.body(respuesta);
 	}
