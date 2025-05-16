@@ -17,16 +17,18 @@ composer install
 
 ### Datos incluidos: Laravel y Spring Boot
 
-Para Laravel se han incluido los datos iniciales dentro de las migraciones.
-
-Para Spring Boot se ha generado un script SQL que se deberá ejecutar para crear la base de datos dedicada a él con los datos correspondientes.
-
-Por ello, se recomienda ejecutar las migraciones, que generarán dichas tablas con sus datos:
+Al igual que en la unidad anterior, para Laravel se han incluido los datos iniciales dentro de las migraciones.
 
 ```bash
 php artisan migrate
 ```
 
-Y posteriormente importar y ejecutar en el gestor de bases de datos el script SQL de Spring Boot.
+Para Spring Boot se ha generado el script SQL `coleccionmusical_usuarios.sql`, ubicado en la raíz del repositorio, que se deberá ejecutar en el servidor MySQL para crear la base de datos correspondiente con los datos de prueba.
 
-En este punto se puede pasar a probar los endpoints en Postman.
+A continuación levantamos el microservicio desde la consola con
+
+```bash
+./mvnw spring-boot:run
+```
+
+En este punto la API está lista y se puede pasar a probar los endpoints en Postman.
