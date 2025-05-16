@@ -32,4 +32,4 @@ cd ../microservicio
 ./mvnw spring-boot:run
 ```
 
-En este punto la API está lista y se puede pasar a probar los endpoints en Postman.
+En este punto la API está lista y se puede pasar a probar las peticiones desde Postman.
