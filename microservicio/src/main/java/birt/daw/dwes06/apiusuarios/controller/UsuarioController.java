@@ -85,20 +85,20 @@ public class UsuarioController {
 	@GetMapping("/{idUsuario}")
 	public ResponseEntity<RespuestaApi> getUsuarioById(@PathVariable int idUsuario) {
 		
-		Usuario usuario;
+		Usuario usuario = this.usuarioServicio.getById(idUsuario);
 		
 		try {
-			usuario = this.usuarioServicio.getById(idUsuario);
 			
-			// Mapeamos la entidad a DTO y enviamos la respuesta correspondiente, que siempre tiene formato de lista.
-			
-			UsuarioDTO usuarioRespuesta = modelMapper.map(usuario, UsuarioDTO.class);
-			
+			// Si está vacío no se ha encontrado el usuario
 			if (usuario == null) {
 				RespuestaApi respuesta = new RespuestaApi("Not Found", 404, "No existe el usuario solicitado", null);
 				return ResponseEntity.ok()
 					.body(respuesta);
 			}
+			
+			// Mapeamos la entidad a DTO y enviamos la respuesta correspondiente, que siempre tiene formato de lista.
+			
+			UsuarioDTO usuarioRespuesta = modelMapper.map(usuario, UsuarioDTO.class);
 			
 			List<UsuarioDTO> usuarios = new ArrayList<UsuarioDTO>();
 			usuarios.add(usuarioRespuesta);
@@ -107,7 +107,7 @@ public class UsuarioController {
 			return ResponseEntity.ok()
 				.body(respuesta);
 		} catch (Exception e) {
-			RespuestaApi respuesta = new RespuestaApi("Server Error", 500, "Se produjo un error en el servidor al recuperar el usuario", null);
+			RespuestaApi respuesta = new RespuestaApi("Server Error", 500, "Se produjo un error en el servidor al recuperar el usuario" + e.getMessage(), null);
 			return ResponseEntity.ok()
 				.body(respuesta);
 		} 
